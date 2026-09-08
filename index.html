@@ -1,0 +1,726 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI Trading — One Market Brain</title>
+<style>
+:root{
+ --bg:#eef9ff;--panel:#ffffff;--panel2:#f7fcff;--line:#b9dff2;--text:#123a67;--muted:#66839a;
+ --navy:#0a3975;--blue:#1476c9;--sky:#35b7f4;--ice:#eaf8ff;--green:#159b72;--red:#d94f64;--amber:#d59616;
+}
+*{box-sizing:border-box}html,body{min-height:100%;margin:0}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;color:var(--text);background:
+radial-gradient(circle at 8% 5%,rgba(98,203,250,.30),transparent 27%),
+radial-gradient(circle at 92% 8%,rgba(62,157,223,.16),transparent 24%),
+linear-gradient(145deg,#e8f8ff 0%,#f8fdff 48%,#e7f6ff 100%);overflow-x:hidden}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.38;background-image:
+linear-gradient(rgba(30,143,214,.055) 1px,transparent 1px),
+linear-gradient(90deg,rgba(30,143,214,.055) 1px,transparent 1px);background-size:34px 34px;
+mask-image:linear-gradient(to bottom,black,transparent 92%);z-index:0}
+button,input,select{font:inherit}button{cursor:pointer}.hidden{display:none!important}
+#loginGate{min-height:100vh;display:grid;place-items:center;padding:34px;position:relative;z-index:1}
+.login-card{width:min(560px,100%);background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(241,250,255,.94));
+border:1px solid #a9dcf5;border-radius:28px;padding:34px;box-shadow:0 25px 90px rgba(31,126,177,.17),inset 0 1px 0 #fff;position:relative;overflow:hidden}
+.login-card:before,.panel:before,.scanner-card:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:
+linear-gradient(rgba(30,143,214,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(30,143,214,.045) 1px,transparent 1px);background-size:24px 24px;mask-image:linear-gradient(to bottom,black,transparent 78%)}
+.login-card>*{position:relative;z-index:1}.brand,.title{display:flex;gap:14px;align-items:center}
+.logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#0a4f99,#55c8ff);display:grid;place-items:center;color:#fff;font-size:23px;
+box-shadow:0 8px 24px rgba(23,143,229,.24)}.logo:after{content:"✦";text-shadow:0 0 12px rgba(255,255,255,.75)}
+h1{margin:0;color:#083b78;font-size:26px;letter-spacing:.4px;font-weight:950}.sub{color:var(--muted);margin:5px 0 22px}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid #b9dfef;border-radius:999px;color:#287394;font-size:12px}
+.dot{width:8px;height:8px;border-radius:50%;background:#e9ae31}.dot.ok{background:var(--green)}.dot.bad{background:var(--red)}
+label{display:block;color:#89a8bb;font-size:11px;margin:14px 0 7px}input,select{width:100%;background:#f7fcff;border:1px solid #b9ddec;color:var(--text);border-radius:11px;padding:11px}
+.primary{width:100%;border:0;border-radius:13px;padding:14px;margin-top:18px;background:linear-gradient(90deg,#0d5fb8,#168fe5 62%,#45c5f7);color:#fff;font-weight:900;letter-spacing:.25px;box-shadow:0 10px 25px rgba(19,126,207,.22)}
+.err{margin-top:12px;color:var(--red);font-size:12px;min-height:18px}.note{font-size:11px;color:#7393a5;line-height:1.5;margin-top:16px}
+#app{min-height:100vh;padding:20px;position:relative;z-index:1}.wrap{max-width:1540px;margin:auto}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.title h1{font-size:29px;color:#073b78}
+.status{display:flex;align-items:center;gap:9px;border:1px solid #b9ddec;background:rgba(255,255,255,.9);border-radius:999px;padding:8px 12px;color:#4d7185;font-size:12px}
+.mode-tf{min-width:74px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #a9d9f4;border-radius:10px;background:linear-gradient(180deg,#f5fbff,#e5f4ff);color:#12467d;font-weight:900;box-shadow:inset 0 1px 0 #fff,0 4px 12px rgba(30,130,190,.08)}
+.toolbar{margin-top:14px;display:grid;grid-template-columns:1.25fr 1fr 1fr 1fr 1fr;gap:9px;background:rgba(255,255,255,.9);border:1px solid #c7e8f8;border-radius:18px;padding:12px;box-shadow:0 8px 28px rgba(44,143,190,.08);position:relative;overflow:hidden}
+.toolbar:before{content:"";position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(30,143,214,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(30,143,214,.035) 1px,transparent 1px);background-size:22px 22px}
+.toolbar>*{position:relative;z-index:1}.tabs{grid-column:1/-1;display:flex;gap:8px}.tab,.chip{border:1px solid #acd9ef;background:#f3fbff;color:#2b668a;border-radius:10px;padding:9px 16px;font-weight:850}
+.tab.active{background:#d8f3ff;color:#073f7b;border-color:#63bce9;box-shadow:0 5px 16px rgba(42,155,215,.12)}
+.action{grid-column:1/-1;display:flex;gap:8px;align-items:end}.action button{border:1px solid #2b6685;background:#f0faff;color:#21627d;border-radius:10px;padding:10px 14px;font-weight:850}.action .scan{background:#158bd6;color:#fff;border-color:#158bd6}
+.filterbar{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1.4fr;gap:8px;padding-top:2px}
+.filterbar .filter{background:#f6fbfe;border:1px solid #cde8f4;border-radius:11px;padding:8px}.filterbar select,.filterbar input{padding:8px;border:0;background:transparent}
+.grid{display:grid;grid-template-columns:1.65fr 1fr;gap:14px;margin-top:14px}.stack{display:grid;gap:14px}.panel{background:linear-gradient(145deg,rgba(255,255,255,.96),rgba(244,251,255,.92));border:1px solid #bfe2f3;border-radius:18px;overflow:hidden;box-shadow:0 12px 38px rgba(44,143,190,.09),inset 0 1px 0 #fff;position:relative}
+.panel-head{padding:14px 16px;border-bottom:1px solid #d4edf8;display:flex;justify-content:space-between;align-items:center;gap:10px;position:relative;z-index:1}.panel-head b{font-size:14px}.panel-head span{font-size:11px;color:#7fa0b4}
+.body{padding:14px;position:relative;z-index:1}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}.metric{background:#f6fbfe;border:1px solid #cde8f4;border-radius:12px;padding:11px}.metric small{display:block;color:#7695a8;font-size:9px;text-transform:uppercase}.metric strong{display:block;font-size:17px;margin-top:4px}
+.chart{height:285px;margin-top:12px;background:radial-gradient(circle at 50% 50%,rgba(99,202,247,.10),transparent 60%),linear-gradient(rgba(36,153,215,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(36,153,215,.055) 1px,transparent 1px),#f3fbff;background-size:auto,26px 26px,26px 26px;border:1px solid #b9dff1;border-radius:12px;display:grid;place-items:center;overflow:hidden}
+.mtf{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.mtf div{background:#f6fbfe;border:1px solid #cde8f4;border-radius:10px;padding:9px}.mtf small{color:#7695a8;font-size:9px}.mtf b{display:block;margin-top:3px}
+.reason{margin-top:10px;padding:11px;border:1px dashed #afd9eb;border-radius:11px;color:#5f8194;font-size:11px;line-height:1.5;background:rgba(248,253,255,.65)}
+.scanner{display:grid;gap:12px}.scanner-card{position:relative;background:linear-gradient(145deg,#fff,#f3fbff);border:1px solid #c5e4f2;border-radius:17px;padding:14px;overflow:hidden;box-shadow:0 7px 20px rgba(44,143,190,.06)}
+.scanner-card.ready{border-color:#8bd4bb;box-shadow:0 9px 28px rgba(21,155,114,.10)}.scanner-card.watch{border-color:#f0d69a}.scanner-card.conf{border-color:#bdd5e5}
+.card-top{display:grid;grid-template-columns:52px 1fr auto auto;gap:10px;align-items:center;position:relative;z-index:1}.rank{font-size:18px;font-weight:950;color:#7895a8}.pair{font-size:20px;font-weight:950;color:#123f73}.pair-sub{font-size:10px;color:#7d98a8;margin-top:2px}.badge-status{padding:7px 10px;border-radius:999px;font-size:10px;font-weight:950;letter-spacing:.3px}.ready-b{background:#e8faf2;color:#11835f;border:1px solid #9cdbc4}.watch-b{background:#fff8e8;color:#9b6b0b;border:1px solid #efd79a}.conf-b{background:#eef7fc;color:#4f7790;border:1px solid #bfd8e7}.toptrade{background:#fff5c9;color:#87670a;border:1px solid #e5c95b;padding:6px 9px;border-radius:999px;font-size:10px;font-weight:950}
+.card-price{margin-top:10px;position:relative;z-index:1}.price-label{font-size:11px;font-weight:850;color:#1778a6}.price{font-size:31px;font-weight:950;color:#0c2c4e;margin-top:2px}.ema-note{font-size:12px;font-weight:850;margin-top:2px}.long{color:var(--green)}.short{color:var(--red)}
+.signal{margin-top:10px;padding:11px;border:1px solid #a8dbc8;background:#effcf6;border-radius:12px;color:#0d7558;font-weight:950;position:relative;z-index:1}
+.signal.wait{background:#f7fbfd;border-color:#cfe2ec;color:#5e7e92}.tfgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;position:relative;z-index:1}.tfbox{background:#f3f8fb;border:1px solid #d0e0e8;border-radius:11px;padding:9px}.tfbox small{display:block;color:#7b94a3;font-size:9px}.tfbox b{display:block;margin-top:4px}
+.detailgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px;position:relative;z-index:1}.detail{background:#f6fbfe;border:1px solid #cde8f4;border-radius:10px;padding:9px}.detail small{display:block;color:#7895a6;font-size:9px}.detail b{display:block;font-size:13px;margin-top:3px}
+.trigger{margin-top:10px;padding:11px;border:1px solid #c9e4ef;border-radius:11px;background:#f9fdff;font-size:11px;line-height:1.5;position:relative;z-index:1}.trigger b{font-size:11px}
+.plan{margin-top:10px;padding:12px;border:1px solid #a7dacc;border-radius:13px;background:linear-gradient(145deg,#effcf8,#f6fdff);position:relative;z-index:1}.plan h4{margin:0 0 7px;color:#0c7559;font-size:13px}.planrow{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.planitem{background:rgba(255,255,255,.7);border:1px solid #c9e8df;border-radius:9px;padding:7px}.planitem small{display:block;color:#7895a6;font-size:9px}.planitem b{display:block;margin-top:2px;font-size:11px}
+.entryreason{margin-top:8px;padding:9px;border:1px solid #b9dfd4;border-radius:10px;background:#f5fffb;color:#2d6c5b;font-size:11px;line-height:1.5}.paper-auto{margin-top:8px;font-size:10px;color:#6b8999}
+.matrix-row{display:grid;grid-template-columns:1fr 1fr 1fr;padding:9px;border-bottom:1px solid #dceff7;font-size:11px}.matrix-row:last-child{border-bottom:0}.matrix-row b{font-weight:900}
+.paper{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.trade-list{margin-top:10px;max-height:360px;overflow:auto}.trade{padding:10px;border-bottom:1px solid #dceff7;font-size:10px}.trade strong{color:#123f73}.trade .meta{color:#7695a8;margin-top:3px}.trade .verdict{margin-top:5px;line-height:1.45;color:#4f6f80}
+.empty{padding:24px;text-align:center;color:#7895a8;border:1px dashed #b7d9e9;border-radius:12px;background:#f8fdff}
+footer{margin:14px auto;color:#7897a8;font-size:10px;line-height:1.5;padding:0 4px}
+@media(max-width:1100px){.grid{grid-template-columns:1fr}.toolbar{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:760px){#app{padding:10px}.toolbar{grid-template-columns:1fr 1fr}.filterbar{grid-template-columns:1fr 1fr}.metrics,.paper{grid-template-columns:1fr 1fr}.card-top{grid-template-columns:42px 1fr auto}.toptrade{grid-column:2/-1;justify-self:start}.detailgrid{grid-template-columns:1fr}.planrow{grid-template-columns:1fr 1fr}.mtf{grid-template-columns:1fr 1fr}}
+
+
+
+
+.exchange-lock{grid-column:span 2;display:flex;align-items:center;gap:12px;padding:10px 13px;border:1px solid #a9dcf5;border-radius:14px;background:linear-gradient(135deg,#f4fcff,#eaf8ff);box-shadow:0 5px 16px rgba(31,126,177,.07)}.exchange-dot{width:11px;height:11px;border-radius:50%;background:#27a8e6;box-shadow:0 0 0 5px rgba(39,168,230,.12),0 0 14px rgba(39,168,230,.55);flex:0 0 auto}.exchange-lock label,.exchange-lock small{display:block}.exchange-lock label{font-size:9px;color:#6d8ea5;font-weight:800;letter-spacing:.12em}.exchange-lock strong{display:block;color:#073f7b;font-size:13px}.exchange-lock small{font-size:9px;color:#7897a8;margin-top:2px}.hero-panel{border-color:#9fd8f2}.market-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.market-summary>div{padding:12px;border:1px solid #c6e5f2;border-radius:12px;background:#f8fdff}.market-summary small{display:block;font-size:9px;color:#7897a8;letter-spacing:.08em}.market-summary strong{display:block;margin-top:4px;font-size:11px;color:#0b4b82}.summary-note{margin-top:10px;padding:10px 12px;border-radius:11px;background:#eefaff;border:1px solid #c7e9f7;color:#58778a;font-size:10px;line-height:1.5}@media(max-width:760px){.exchange-lock{grid-column:1/-1}.market-summary{grid-template-columns:1fr 1fr}}
+</style>
+
+<style>
+/* V16 professional trader polish */
+.toolbar{box-shadow:0 12px 34px rgba(44,143,190,.10)}
+.panel{box-shadow:0 14px 42px rgba(44,143,190,.10)}
+.hero-panel{background:linear-gradient(145deg,#ffffff,#eefaff)}
+.market-summary>div{min-height:54px}
+.scan-health{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.scan-health div{border:1px solid #c7e5f2;border-radius:10px;padding:9px;background:#f8fdff}
+.scan-health small{display:block;font-size:8px;color:#7897a8;letter-spacing:.08em}
+.scan-health b{display:block;margin-top:3px;font-size:11px;color:#0b4b82}
+.discipline{margin-top:10px;padding:11px 12px;border:1px solid #c5e4f2;border-radius:12px;background:linear-gradient(135deg,#f5fcff,#eefaff);font-size:10px;line-height:1.55;color:#557688}
+.discipline b{color:#124d7e}
+.scorebar{height:6px;border-radius:999px;background:#e5f2f8;overflow:hidden;margin-top:7px}
+.scorebar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#35b7f4,#159b72)}
+.setup-quality{margin-top:8px;padding:9px;border-radius:10px;background:#fbfeff;border:1px solid #d0e7f1;font-size:10px;color:#5b7888}
+.qualification-check{margin-top:9px;padding:10px;border:1px solid #c5e4f2;border-radius:11px;background:#f8fdff;font-size:10px;line-height:1.55;color:#58778a}.qualification-check b{color:#0b4b82}.qualification-check .qpass{color:#0b8b67;font-weight:850}.qualification-check .qfail{color:#a36a0a;font-weight:850}.qualification-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}.qualification-item{border:1px solid #c7e5f2;border-radius:11px;padding:9px;background:#f8fdff}.qualification-item .qhead{display:flex;justify-content:space-between;gap:8px;font-weight:900;color:#17486a}.qualification-item small{display:block;color:#7897a8;margin-top:3px;line-height:1.45}.freshness{margin-top:10px;padding:9px 11px;border:1px solid #c7e5f2;border-radius:11px;background:#eefaff;color:#557688;font-size:10px;line-height:1.5}.near-miss{margin-top:10px;border:1px solid #d9e7ee;border-radius:12px;background:#fbfeff;padding:10px}.near-miss-head{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#17486a;font-weight:900}.near-miss-row{display:grid;grid-template-columns:1.2fr .7fr 1.8fr;gap:7px;padding:7px 0;border-top:1px solid #e3eef3;font-size:9px;color:#5d7788}.regime-badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#e9f7ff;border:1px solid #bfe1f1;color:#176b98;font-size:9px;font-weight:900}.score-calibration{margin-top:10px}.score-calibration table{width:100%;border-collapse:collapse;font-size:9px}.score-calibration th,.score-calibration td{padding:7px;border-bottom:1px solid #dceff7;text-align:left}.score-calibration th{color:#668495;font-size:8px;text-transform:uppercase}.qualified-count{font-size:10px;color:#176b98;font-weight:900}
+
+@media(max-width:760px){.scan-health{grid-template-columns:1fr 1fr}}
+</style>
+
+<style id="strategy-lab-v18-css">
+.strategy-lab{margin-top:4px}.strategy-note{font-size:11px;color:#5d7788;line-height:1.55;margin-bottom:12px}
+.strategy-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.strategy-card{border:1px solid #d8e7ef;border-radius:12px;padding:12px;background:linear-gradient(180deg,#fff,#f7fbfe)}
+.strategy-card.active{box-shadow:0 8px 22px rgba(30,90,130,.08)}.strategy-card h4{margin:0 0 3px;font-size:13px;color:#163f63}.strategy-card .tag{display:inline-block;font-size:9px;font-weight:800;padding:4px 7px;border-radius:999px;background:#e7f4fb;color:#1673a6;margin-right:4px}
+.strategy-card .mini{font-size:10px;color:#6c8491;margin:7px 0}.strategy-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.strategy-plan div{padding:7px;border-radius:8px;background:#f2f8fb}.strategy-plan small{display:block;font-size:8px;color:#6d8794}.strategy-plan b{font-size:10px}.strategy-status{font-size:10px;font-weight:800;margin-top:8px}.strategy-status.ready{color:#087f5b}.strategy-status.wait{color:#a66a00}.strategy-status.skip{color:#8a98a3}
+.strategy-table{width:100%;overflow:auto}.strategy-table table{min-width:760px}.strategy-table th,.strategy-table td{font-size:10px;padding:8px}.strategy-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}.strategy-kpi{padding:9px;border:1px solid #dce9ef;border-radius:9px;background:#f9fcfd}.strategy-kpi small{display:block;font-size:8px;color:#718896}.strategy-kpi b{font-size:15px;color:#17486a}.strategy-legend{font-size:9px;color:#78909c;margin-top:8px}
+@media(max-width:760px){.strategy-grid{grid-template-columns:1fr}.strategy-summary{grid-template-columns:repeat(2,1fr)}.strategy-plan{grid-template-columns:repeat(2,1fr)}}
+</style>
+<style id="v31-trade-style-css">
+.style-desk{margin:0;padding:11px 14px;border-top:1px solid #dceff7;background:linear-gradient(135deg,#f7fdff,#eef9ff);display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.style-desk .style-title{font-size:10px;font-weight:950;color:#0b4b82;letter-spacing:.04em}
+.style-desk .style-pill{padding:6px 9px;border:1px solid #b9ddec;border-radius:999px;background:#fff;color:#1c6289;font-size:9px;font-weight:850}
+.style-desk .style-pill b{color:#073f7b}
+.style-desk .style-note{font-size:9px;color:#6a8798;line-height:1.4}
+.style-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#e7f5ff;border:1px solid #b9e0f3;color:#126b99;font-size:9px;font-weight:950}
+.style-plan{margin-top:10px;padding:12px;border:1px solid #afd9ee;border-radius:13px;background:linear-gradient(145deg,#f1fbff,#f8fdff);position:relative;z-index:1}
+.style-plan h4{margin:0 0 7px;color:#0b5c8b;font-size:13px}.style-plan .style-meta{font-size:9px;color:#668596;margin-bottom:8px;line-height:1.45}
+.style-plan .style-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.style-plan .style-level{background:#fff;border:1px solid #d0e8f3;border-radius:9px;padding:7px}.style-plan .style-level small{display:block;color:#7895a6;font-size:8px}.style-plan .style-level b{display:block;margin-top:2px;font-size:11px}
+.style-plan .style-reason{margin-top:8px;padding:8px;border-radius:9px;background:#eefaff;border:1px solid #c6e7f4;color:#466f83;font-size:10px;line-height:1.5}
+.style-wait{margin-top:10px;padding:10px;border:1px dashed #c7dce7;border-radius:11px;background:#fbfeff;color:#718997;font-size:10px;line-height:1.45}
+@media(max-width:760px){.style-plan .style-levels{grid-template-columns:1fr 1fr}.style-desk{align-items:flex-start}}
+</style>
+<style id="v30-card-image-copy-css">
+.scanner-card.v31-copy-ready{position:relative!important;padding-top:14px;padding-bottom:42px;}
+.scanner-card.v31-copy-ready .card-top{padding-left:31px;padding-right:31px;}
+.v31-card-copy-btn{position:absolute!important;z-index:1000!important;width:24px!important;height:24px!important;min-width:24px!important;min-height:24px!important;padding:0!important;margin:0!important;border:1px solid #65bdf0!important;border-radius:7px!important;background:#e9f8ff!important;color:#075a91!important;display:grid!important;place-items:center!important;cursor:pointer!important;line-height:1!important;font-size:13px!important;font-weight:900!important;box-shadow:0 3px 9px rgba(22,126,183,.18)!important;opacity:1!important;visibility:visible!important;pointer-events:auto!important;transition:transform .14s ease,background .14s ease,box-shadow .14s ease!important;}
+.v31-card-copy-btn:hover{background:#cfefff!important;transform:scale(1.08)!important;box-shadow:0 5px 13px rgba(22,126,183,.25)!important;}
+.v31-card-copy-btn:active{transform:scale(.94)!important;}
+.v31-card-copy-btn:focus-visible{outline:2px solid #38a9e8!important;outline-offset:2px!important;}
+.v31-card-copy-btn.tl{top:5px!important;left:5px!important}.v31-card-copy-btn.tr{top:5px!important;right:5px!important}.v31-card-copy-btn.bl{bottom:5px!important;left:5px!important}.v31-card-copy-btn.br{bottom:5px!important;right:5px!important}
+.v31-card-copy-btn.copied{background:#dff9ed!important;border-color:#68c9a0!important;color:#08744e!important;}
+.v30-card-copy-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:999999;padding:9px 14px;border-radius:11px;background:#0b5f91;color:#fff;font-size:12px;font-weight:900;box-shadow:0 10px 28px rgba(16,90,130,.25);pointer-events:none;opacity:0;transition:opacity .16s ease}
+.v30-card-copy-toast.show{opacity:1}
+@media(max-width:760px){.v31-card-copy-btn{width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;font-size:12px!important}.scanner-card.v31-copy-ready{padding-bottom:39px}.scanner-card.v31-copy-ready .card-top{padding-left:28px;padding-right:28px}}
+</style>
+</head>
+<body>
+<section id="loginGate">
+  <div class="login-card">
+    <div class="brand"><div class="logo" aria-hidden="true"></div><div><h1>AI TRADING</h1><div class="sub">Public Futures Scanner • Read-only Intelligence • Paper Execution</div></div></div>
+    <div class="badge"><span class="dot"></span><span id="loginState">Starting public market engine…</span></div>
+    <div class="note">No personal account, identity, exchange API key, or live order permission is embedded in this public edition. Market data is read-only and paper execution is simulated locally.</div>
+  </div>
+</section>
+
+<section id="app" class="hidden">
+<div class="wrap">
+  <div class="top">
+    <div class="title"><div class="logo" aria-hidden="true"></div><div><h1>AI TRADING</h1><div class="sub">ONE MARKET BRAIN • BYBIT FUTURES • SYSTEM ENTRY TEST • PAPER EXECUTION</div></div></div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="status">Starting public market engine…</span></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="exchange-lock"><span class="exchange-dot"></span><div><label>MARKET</label><strong>BYBIT FUTURES</strong><small>Native Bybit • Read-only • ONE MARKET BRAIN</small></div></div>
+    <div><label>Universe</label><select id="cap"><option value="large">High-liquidity / established</option><option value="mid">Medium+ liquidity</option><option value="all">All eligible</option></select></div>
+    <div><label>Scanner size</label><select id="limit"><option>10</option><option selected>20</option><option>30</option></select></div>
+    <div><label>Trade Style</label><select id="tradeStyle"><option value="SCALPER">⚡ Scalper • minutes–hours</option><option value="DAY" selected>🔥 Day Trader • hours–day</option><option value="SWING">🌊 Swing Trader • days–weeks</option><option value="POSITION">🏔️ Position Trader • weeks–months</option></select></div>
+    <div class="filterbar">
+      <div class="filter"><label>Status filter</label><select id="statusFilter"><option value="ALL">All ranked</option><option value="READY">READY only</option><option value="WATCH">WATCH only</option><option value="CONFLUENCE">CONFLUENCE only</option></select></div>
+      <div class="filter"><label>Direction</label><select id="dirFilter"><option value="ALL">LONG + SHORT</option><option value="LONG">LONG only</option><option value="SHORT">SHORT only</option></select></div>
+      <div class="filter"><label>Minimum confidence</label><select id="minScore"><option value="0">Any</option><option value="60">60%+</option><option value="70">70%+</option><option value="80" selected>80%+</option></select></div>
+      <div class="filter"><label>Top Trade</label><select id="topFilter"><option value="ALL">All</option><option value="TOP3">Top 3 only</option></select></div>
+      <div class="filter"><label>Search pair</label><input id="pairSearch" placeholder="BTC, ETH, HYPE…"></div>
+    </div>
+    <div class="action"><button class="scan" id="scanBtn">SCAN & RANK LIVE</button><button id="paperBtn">PAPER EXECUTION • READY ≥ 80%</button><button id="resetBtn">RESET SYSTEM TEST</button></div>
+  </div>
+
+  <div class="grid">
+    <main class="stack">
+      <section class="panel hero-panel">
+        <div class="panel-head"><b>Bybit Market Intelligence</b><span>15-MIN CLOSED-CANDLE SCANNER</span></div>
+        <div class="body">
+          <div class="market-summary">
+            <div><small>MARKET</small><strong>BYBIT LINEAR FUTURES</strong></div>
+            <div><small>DATA MODE</small><strong>NATIVE • READ-ONLY</strong></div>
+            <div><small>SCANNER TF</small><strong>15 MINUTES</strong></div>
+            <div><small>RANKING</small><strong>READY → WATCH → CONFLUENCE</strong></div>
+          </div>
+          <div class="summary-note">One shared Bybit Market Brain feeds the scanner. The engine prioritizes market regime, trend alignment, momentum, volume expansion, structure, liquidity and closed-candle confirmation. No forced trade and no live order execution.</div>
+          <div class="scan-health">
+            <div><small>DATA SOURCE</small><b>NATIVE BYBIT</b></div>
+            <div><small>DECISION BASIS</small><b>CLOSED CANDLES</b></div>
+            <div><small>TRADE MODE</small><b>PAPER ONLY</b></div>
+            <div><small>EXECUTION</small><b>NO LIVE ORDERS</b></div>
+          </div>
+          <div class="discipline"><b>Professional discipline:</b> rank setups first, require confirmation, avoid forcing trades in weak conditions, and treat the displayed confidence as a model score—not a guaranteed probability. Every system entry is simulated only and retained as a learning journal. No real Bybit order is ever sent.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><b>Ranked Opportunity Scanner</b><span id="scanMeta">No scan yet</span></div>
+        <div class="body" style="padding-top:0"><div id="styleDesk" class="style-desk"></div></div>
+        <div class="body"><div class="scanner" id="scanner"><div class="empty">Run <b>SCAN & RANK LIVE</b> to build the native exchange opportunity board.</div></div></div>
+      </section>
+    </main>
+
+    <aside class="stack">
+      <section class="panel">
+        <div class="panel-head"><b>Top Opportunity Snapshot</b><span>BYBIT • SYSTEM ENTRY DESK</span></div>
+        <div class="body"><div id="matrix" class="reason">Run the live scanner to populate qualified opportunities.</div><div id="scanFreshness" class="freshness" style="display:none"></div><div id="nearMisses" class="near-miss" style="display:none"></div></div>
+      </section>
+      <section class="panel">
+        <div class="panel-head"><b>Fundamental Analysis — FA2 Context Engine</b><span>BYBIT DATA • INDEPENDENT FROM TA</span></div>
+        <div class="body">
+          <div class="strategy-note"><b>Purpose:</b> FA now has an explicit, recorded basis instead of using 24h change + funding alone. The engine separates <b>market fundamentals/context</b> from TA and scores six evidence groups: <b>24h momentum, Open Interest trend, funding pressure/persistence, holder long/short positioning, mark/index basis, and liquidity</b>.</div>
+          <div class="strategy-summary">
+            <div class="strategy-kpi"><small>FA DATA</small><b>6 FACTORS</b></div>
+            <div class="strategy-kpi"><small>OI WINDOW</small><b>≈6H</b></div>
+            <div class="strategy-kpi"><small>POSITIONING</small><b>1H HOLDERS</b></div>
+            <div class="strategy-kpi"><small>ENTRY GATE</small><b>≥60% FA</b></div>
+          </div>
+          <div class="strategy-note" style="margin-top:10px"><b>Directional rules:</b> price + OI rising supports LONG participation; price falling + OI rising supports SHORT participation; falling OI with rising price is treated as short covering; falling OI with falling price as long liquidation. Extreme positive funding / long-holder crowding is a bearish headwind, while extreme negative funding / short-holder crowding is a bullish headwind. Basis is treated as confirmation when moderate and as a crowding warning when extreme. LOW liquidity reduces conviction.</div>
+          <div class="strategy-legend">FA Score is a <b>decision score, not probability</b>. “Fundamental Analysis” here means crypto-native market/derivatives fundamentals available from Bybit. External news, token unlocks, treasury data, on-chain activity and protocol fundamentals are intentionally not claimed.</div>
+        </div>
+      </section>
+
+      <section class="panel strategy-lab">
+        <div class="panel-head"><b>Strategy Effectiveness Lab</b><span>12 INDEPENDENT PAPER LANES • V11</span></div>
+        <div class="body">
+          <div class="strategy-note"><b>Purpose:</b> test the same Bybit market through three decision methods — <b>Technical Analysis (TA)</b>, <b>Fundamental Analysis (FA)</b>, and <b>TA + FA</b> — across <b>Scalper, Day Trader, Swing Trader, and Position Trader</b> styles. Each lane has its own paper ledger so we can measure which combination is actually effective. Results use true staged 1/3 exits, per-fill fees/slippage, duplicate-signal protection, legacy-data isolation, drawdown metrics, and sample-size qualification. FA is a <b>crypto-native fundamental/derivatives framework</b> built only from Bybit market data: funding history, OI trend, holder positioning, mark/index basis, 24h momentum and liquidity. It is not news, tokenomics or on-chain fundamental research.</div>
+          <div class="strategy-summary">
+            <div class="strategy-kpi"><small>LANES</small><b id="strategyLaneCount">12</b></div>
+            <div class="strategy-kpi"><small>OPEN TESTS</small><b id="strategyOpenCount">0</b></div>
+            <div class="strategy-kpi"><small>CLOSED TESTS</small><b id="strategyClosedCount">0</b></div>
+            <div class="strategy-kpi"><small>BEST LANE</small><b id="strategyBestLane">—</b></div>
+          </div>
+          <div id="strategyGrid" class="strategy-grid"><div class="empty">Run the scanner to populate the 12 strategy lanes.</div></div>
+          <div class="strategy-table" style="margin-top:12px"><table><thead><tr><th>Analysis</th><th>Trader Style</th><th>Trades</th><th>Win Rate</th><th>Avg R</th><th>Net P/L</th><th>Status</th></tr></thead><tbody id="strategyStatsBody"><tr><td colspan="7">No strategy tests yet.</td></tr></tbody></table></div>
+          <div class="strategy-legend">Every generated entry is simulated only. No Bybit order is created. Results are experimental evidence, not guaranteed profitability.</div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><b>System Entry / Paper Journal</b><span>SIMULATION ONLY</span></div>
+        <div class="body">
+          <div class="paper">
+            <div class="metric"><small>Equity</small><strong id="equity">$10,000.00</strong></div>
+            <div class="metric"><small>Win Rate</small><strong id="winrate">0%</strong></div>
+            <div class="metric"><small>Trades</small><strong id="trades">0</strong></div>
+            <div class="metric"><small>P/L</small><strong id="pnl">+$0.00</strong></div>
+          </div>
+          <div class="trade-list" id="tradeList">No paper trades yet.</div><div id="scoreCalibration"></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+  <footer>BYBIT-only native futures intelligence • One Market Brain • closed-candle multi-timeframe scanner • disciplined setup ranking • system-generated entry testing • paper execution only • no live exchange orders.</footer>
+</div>
+</section>
+
+<script type="module">
+const CFG=Object.freeze({
+  publicGateway:"/api"
+});
+const $=id=>document.getElementById(id);
+function escapeHtml(v){return String(v==null?"":v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function setLogin(msg,bad=false){$("loginState").textContent=msg;$("loginState").previousElementSibling.className="dot "+(bad?"bad":"ok")}
+function setStatus(msg,ok=false,bad=false){$("status").textContent=msg;$("statusDot").className="dot "+(ok?"ok":bad?"bad":"")}
+function fmt(n,d=4){return Number.isFinite(+n)?Number(n).toLocaleString(undefined,{maximumFractionDigits:d}):"—"}
+function fixed(n,d=2){return Number.isFinite(Number(n))?Number(n).toFixed(d):"—"}
+function stepRound(value,step){const v=Number(value),s=Number(step);if(!Number.isFinite(v)||!Number.isFinite(s)||s<=0)return v;return Math.round(v/s)*s}
+function stepFloor(value,step){const v=Number(value),s=Number(step);if(!Number.isFinite(v)||!Number.isFinite(s)||s<=0)return v;return Math.floor((v+Number.EPSILON)/s)*s}
+function normalizeInstrument(x){const p=x?.lotSizeFilter||{},q=x?.priceFilter||{};return{symbol:String(x?.symbol||""),status:String(x?.status||""),isPreListing:!!x?.isPreListing,quoteCoin:String(x?.quoteCoin||""),contractType:String(x?.contractType||""),tickSize:Number(q.tickSize)||0,qtyStep:Number(p.qtyStep)||0,minOrderQty:Number(p.minOrderQty)||0,maxOrderQty:Number(p.maxOrderQty)||0}}
+function emptyFAContext(x,error="No FA data"){const funding=Number(x?.funding)||0,oiNow=Number(x?.singleOI||x?.oi)||0,change=Number(x?.change)||0,turn=Number(x?.turn)||0;return{dir:"WAIT",score:0,confidence:0,strength:0,bull:0,bear:0,funding,fundingAvg:funding,oiNow,oiDelta:0,oiDelta1h:0,oiDelta12h:0,lsBuy:.5,lsSell:.5,lsAvgBuy:.5,lsAvgSell:.5,holderNet:0,holderAvgNet:0,holderShift:0,basis:Number(x?.basis)||0,basisRate:Number(x?.basisRate)||0,change,turn,liquidity:turn>=1e8?"HIGH":turn>=1e7?"MEDIUM":"LOW",regime:"NO DATA",evidence:[`FA data unavailable: ${String(error)}`],factors:[],dataQuality:0,source:"BYBIT FA2 • FALLBACK CONTEXT",asOf:Date.now(),oiMethodVersion:"SINGLE_SIDED_2026-06-11",dataStatus:"DEGRADED"}}
+function normalizeFAContext(x,error){const d=x&&typeof x==="object"?x:{};const n=(v,f=0)=>Number.isFinite(Number(v))?Number(v):f;return{dir:["LONG","SHORT","WAIT"].includes(d.dir)?d.dir:"WAIT",score:n(d.score),confidence:n(d.confidence),strength:n(d.strength),bull:n(d.bull),bear:n(d.bear),funding:n(d.funding),fundingAvg:n(d.fundingAvg),oiNow:n(d.oiNow),oiDelta:n(d.oiDelta),oiDelta1h:n(d.oiDelta1h),oiDelta12h:n(d.oiDelta12h),lsBuy:n(d.lsBuy,.5),lsSell:n(d.lsSell,.5),lsAvgBuy:n(d.lsAvgBuy,.5),lsAvgSell:n(d.lsAvgSell,.5),holderNet:n(d.holderNet),holderAvgNet:n(d.holderAvgNet),holderShift:n(d.holderShift),basis:n(d.basis),basisRate:n(d.basisRate),change:n(d.change),turn:n(d.turn),liquidity:["HIGH","MEDIUM","LOW"].includes(d.liquidity)?d.liquidity:"LOW",regime:String(d.regime||"NO DATA"),evidence:Array.isArray(d.evidence)?d.evidence:[],factors:Array.isArray(d.factors)?d.factors:[],dataQuality:n(d.dataQuality),source:String(d.source||"BYBIT FA2 • FUNDAMENTAL + DERIVATIVES MARKET CONTEXT"),asOf:n(d.asOf,Date.now()),oiMethodVersion:String(d.oiMethodVersion||"SINGLE_SIDED_2026-06-11"),dataStatus:String(d.dataStatus||"OK"),sourceTimes:{funding:n(d.sourceTimes?.funding),openInterest:n(d.sourceTimes?.openInterest),holderRatio:n(d.sourceTimes?.holderRatio)},...(error?{dataStatus:"DEGRADED",evidence:[`FA data unavailable: ${String(error)}`]}:{})}}
+function cleanSym(s){return String(s).replace("_USDT","USDT")}
+function bybitSym(s){return String(s).replace(/_USDT$/,"USDT")}
+function withTimeout(promise,ms,label){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label+" timed out after "+Math.round(ms/1000)+"s.")),ms))])}
+
+const SCANNER_CONTEXT=["15","60","240","D"];
+const SCANNER_TF="15";
+const ENGINE_CONTRACT_VERSION="V31";
+const GATEWAY_CONTRACT_VERSION="PUBLIC-READONLY";
+const PAPER_ACCOUNTING_VERSION=8;
+const STRATEGY_LAB_VERSION=12;
+const state={exchange:"BYBIT",scannerTf:SCANNER_TF,tradeStyle:"DAY",cap:"large",limit:20,scanRows:[],analysisRows:[],qualifiedRows:[],lastScanDiagnostics:{candidates:0,basePassed:0,deepCandidates:0,deepPassed:0,qualified:0,nearMisses:[],errors:[],scanStartedAt:0,scanFinishedAt:0,freshness:{}},instrumentMeta:{},paper:{engineVersion:ENGINE_CONTRACT_VERSION,accountingVersion:PAPER_ACCOUNTING_VERSION,equity:10000,trades:[],wins:0,pnl:0,open:null,legacyJournals:[]},strategyLab:{version:null,lanes:{},legacyArchives:[]}};
+function contextTFs(){return SCANNER_CONTEXT}
+$("cap").onchange=e=>{state.cap=e.target.value;scan()};$("limit").onchange=e=>{state.limit=+e.target.value;renderScanner()};$("tradeStyle").onchange=e=>{state.tradeStyle=e.target.value;renderStyleDesk();scan()};$("scanBtn").onclick=scan;$("paperBtn").onclick=()=>alert("System Entry is automatic only when the selected Trade Style reaches its own READY gate at 80%+ and the current Bybit reference price remains inside the style fill-drift guard. No real Bybit order is created.");$("resetBtn").onclick=()=>{state.paper={engineVersion:ENGINE_CONTRACT_VERSION,accountingVersion:PAPER_ACCOUNTING_VERSION,equity:10000,trades:[],wins:0,pnl:0,open:null,legacyJournals:[]};state.strategyLab={version:STRATEGY_LAB_VERSION,lanes:{},legacyArchives:[]};ensureStrategyState();savePaper();renderPaper();renderStrategyLab()};
+["statusFilter","dirFilter","minScore","topFilter","pairSearch"].forEach(id=>$(id).addEventListener("input",renderScanner));
+
+async function publicGet(path,params={}){
+  const url=new URL(CFG.publicGateway+path,window.location.origin);
+  Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null&&v!=="")url.searchParams.set(k,v)});
+  const r=await fetch(url,{headers:{Accept:"application/json"},cache:"no-store"});
+  const raw=await r.text();let j=null;try{j=raw?JSON.parse(raw):null}catch{}
+  if(!r.ok){if(!j)throw new Error(`Public market bridge returned non-JSON HTTP ${r.status}`);throw new Error(j.reason||j.error||j.message||(`HTTP ${r.status}`))}
+  if(!j)throw new Error("Public market bridge returned invalid JSON.");
+  if(j.success===false||j.retCode>0)throw new Error(j.reason||j.error||j.message||j.retMsg||"Public market bridge error");
+  return j;
+}
+const get=publicGet;
+async function tickers(){return broker("BYBIT:tickers",async()=>{const j=await get("/bybit/tickers");return(j.result?.list||j.data?.list||[]).map(normBybitTicker).filter(x=>x.symbol.endsWith("USDT"))},5000)}
+async function instruments(){return broker("BYBIT:instruments",async()=>{let all=[],cursor="";for(let page=0;page<100;page++){const params={category:"linear",limit:1000};if(cursor)params.cursor=cursor;const j=await get("/bybit/instruments",params);const r=j.result||j.data||{};const list=r.list||[];all.push(...list);const next=r.nextPageCursor||"";if(!next||!list.length)return all;if(next===cursor)throw new Error("Bybit instruments pagination cursor repeated; refusing partial universe.");cursor=next}throw new Error("Bybit instruments pagination exceeded safety limit; refusing partial universe.")},30000)}
+function closedOnly(a,tf){const ms=tf==="D"?86400000:+tf*60000;return a.filter(x=>x.t+ms<=Date.now())}
+async function candles(symbol,tf){
+ const key="BYBIT:"+symbol+":"+tf;
+ return broker(key,async()=>{
+  if(tf==="10")return aggregate10(await candles(symbol,"5"));
+  const interval=tf==="D"?"D":tf;
+  const j=await get("/bybit/kline",{category:"linear",symbol:bybitSym(symbol),interval,limit:300});
+  const a=(j.result?.list||j.data?.list||[]).map(x=>({t:+x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]})).reverse();
+  return closedOnly(a,tf).slice(-300);
+ },tf==="5"||tf==="10"?3500:7000);
+}
+function aggregate10(a){const buckets=new Map();for(const x of a){const k=Math.floor(x.t/600000)*600000;let b=buckets.get(k);if(!b)b={t:k,o:x.o,h:x.h,l:x.l,c:x.c,v:0,n:0};b.h=Math.max(b.h,x.h);b.l=Math.min(b.l,x.l);b.c=x.c;b.v+=x.v;b.n++;buckets.set(k,b)}return [...buckets.values()].filter(x=>x.n===2&&x.t+600000<=Date.now()).sort((x,y)=>x.t-y.t).slice(-240)}
+async function ticker(symbol){const a=await tickers();return a.find(x=>x.symbol===bybitSym(symbol))||null}
+const FA_CACHE=new Map(),FA_INFLIGHT=new Map();
+function faNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+function faClamp(v,min=-100,max=100){return Math.max(min,Math.min(max,v))}
+async function fundamentalContext(x){
+ const key="FA2:"+x.symbol,hit=FA_CACHE.get(key);if(hit&&Date.now()-hit.ts<60000)return hit.data;if(FA_INFLIGHT.has(key))return FA_INFLIGHT.get(key);
+ const p=Promise.all([
+  broker(key+":F",async()=>{const j=await get("/bybit/funding",{category:"linear",symbol:x.symbol,limit:20});return j.result?.list||[]},120000),
+  broker(key+":OI",async()=>{const j=await get("/bybit/open-interest",{category:"linear",symbol:x.symbol,interval:"1h",limit:25});return j.result?.list||[]},120000),
+  broker(key+":LS",async()=>{const j=await get("/bybit/account-ratio",{category:"linear",symbol:x.symbol,period:"1h",limit:25});return j.result?.list||[]},120000)
+ ]).then(([fund,oi,ls])=>{
+  const funding=faNum(x.funding),fundRates=fund.map(v=>Number(v?.fundingRate)).filter(Number.isFinite);
+  const fundSlice=fundRates.slice(0,8),fundAvg=fundSlice.length?fundSlice.reduce((a,b)=>a+b,0)/fundSlice.length:funding;
+  const oiVals=oi.map(v=>faNum(v.singleOpenInterest||v.openInterest)).filter(v=>v>0);
+  const oiNow=faNum(x.singleOI||x.oi)||oiVals[0]||0,oiRef=oiVals.length>6?oiVals[6]:oiVals.at(-1)||oiNow,oiDelta=oiRef?oiNow/oiRef-1:0;
+  const oiShort=oiVals.length>1?oiVals[1]:oiNow,oiLong=oiVals.length>12?oiVals[12]:oiVals.at(-1)||oiNow;
+  const oiDelta1h=oiShort?oiNow/oiShort-1:0,oiDelta12h=oiLong?oiNow/oiLong-1:0;
+  const lsVals=ls.map(v=>({buy:faNum(v.buyRatio),sell:faNum(v.sellRatio)})).filter(v=>v.buy>0||v.sell>0);
+  const lsNow=lsVals[0]||{buy:.5,sell:.5},lsAvg=lsVals.length?{buy:lsVals.reduce((a,v)=>a+v.buy,0)/lsVals.length,sell:lsVals.reduce((a,v)=>a+v.sell,0)/lsVals.length}:{buy:.5,sell:.5};
+  const holderNet=lsNow.buy-lsNow.sell,holderAvgNet=lsAvg.buy-lsAvg.sell,holderShift=holderNet-holderAvgNet;
+  const basis=faNum(x.basis)||(x.index?(x.mark-x.index)/x.index:0),basisRate=faNum(x.basisRate),change=faNum(x.change),turn=faNum(x.turn),liq=turn>=1e8?"HIGH":turn>=1e7?"MEDIUM":"LOW";
+
+  // FA2 deliberately separates directional evidence from crowding/quality modifiers.
+  // No EMA/RSI/MACD/support/resistance are used here, so the FA lane remains independent from TA.
+  const factors=[]; const add=(name,raw,weight,note)=>{factors.push({name,raw:faClamp(raw,-1,1),weight,note})};
+  const priceDir=change>.005?1:change<-.005?-1:0;
+  const participation=oiDelta>.03?priceDir:(oiDelta<-.03?priceDir*.35:0);
+  add("OI participation",participation,.30,oiDelta>.03?(priceDir>0?"price + OI expansion":"price + OI contraction/downside"):(oiDelta<-.03?(priceDir>0?"position unwinding / possible short cover":"position unwinding / possible long liquidation"):"OI change is neutral"));
+
+  // Funding is a carry/crowding signal. Extreme positive funding penalizes long crowding; extreme negative funding penalizes short crowding.
+  const fundingUnit=Math.max(Math.abs(funding),Math.abs(fundAvg));
+  let fundingSignal=0;if(fundingUnit>=.0015)fundingSignal=funding<0?1:-1;else if(fundingUnit>=.0008)fundingSignal=funding<0?.35:-.35;
+  add("Funding / carry",fundingSignal,.20,fundingUnit>=.0015?(funding>0?"long-side carry is crowded":"short-side carry is crowded"):"funding is within normal range");
+
+  // Holder ratios describe holder counts, not capital exposure. Use them as crowding sentiment, not position size.
+  let holderSignal=0;if(holderNet>.10)holderSignal=-1;else if(holderNet>.05)holderSignal=-.45;else if(holderNet<-.10)holderSignal=1;else if(holderNet<-.05)holderSignal=.45;
+  if(Math.abs(holderShift)>=.05)holderSignal=faClamp(holderSignal+(holderShift>0?-.15:.15));
+  add("Holder sentiment",holderSignal,.15,Math.abs(holderNet)>.10?(holderNet>0?"long-holder crowding":"short-holder crowding"):"holder positioning is balanced");
+
+  // Basis is mostly a carry/crowding indicator. Mild basis is not treated as direction; only extremes become contrarian evidence.
+  let basisSignal=0;if(basis>.005)basisSignal=-1;else if(basis>.0025)basisSignal=-.35;else if(basis<-.005)basisSignal=1;else if(basis<-.0025)basisSignal=.35;
+  add("Futures basis",basisSignal,.15,Math.abs(basis)>.005?(basis>0?"premium is stretched / long crowding":"discount is stretched / short crowding"):"basis is not extreme");
+
+  // Price momentum is intentionally capped at 10% of FA so this engine does not become a second TA engine.
+  const momentum=change>.03?1:change<-.03?-1:change>.01?.35:change<-.01?-.35:0;
+  add("Momentum context",momentum,.10,"limited 24h context only");
+
+  const weighted=factors.reduce((s,f)=>s+f.raw*f.weight,0);
+  const directional=faClamp(weighted,-1,1);
+  const active=factors.filter(f=>Math.abs(f.raw)>=.25),agree=active.length?active.filter(f=>Math.sign(f.raw)===Math.sign(directional)).length/active.length:.5;
+  const dir=Math.abs(directional)<.14?"WAIT":directional>0?"LONG":"SHORT";
+  const strength=Math.round(50+Math.abs(directional)*50);
+  const confidence=Math.round(faClamp(50+(Math.abs(directional)*30)+(agree*.20*100)+(liq==="HIGH"?8:liq==="MEDIUM"?3:-8),1,99));
+  const score=Math.round(faClamp(strength+(confidence-50)*.20,1,99));
+
+  let regime="NEUTRAL POSITIONING";
+  if(dir!=="WAIT"){
+   if(oiDelta>.03&&((priceDir>0&&dir==="LONG")||(priceDir<0&&dir==="SHORT")))regime=dir==="LONG"?"BULLISH PARTICIPATION":"BEARISH PARTICIPATION";
+   else if(oiDelta<-.03&&priceDir>0)regime="SHORT COVERING / POSITION UNWIND";
+   else if(oiDelta<-.03&&priceDir<0)regime="LONG LIQUIDATION / POSITION UNWIND";
+   else if(holderSignal<0&&basisSignal<0)regime="LONG CROWDED / REVERSAL RISK";
+   else if(holderSignal>0&&basisSignal>0)regime="SHORT CROWDED / SQUEEZE RISK";
+   else regime=dir==="LONG"?"BULLISH CONTEXT":"BEARISH CONTEXT";
+  } else if(oiDelta>.03) regime="POSITION BUILDUP / DIRECTION UNRESOLVED"; else if(oiDelta<-.03) regime="POSITION UNWIND / DIRECTION UNRESOLVED";
+
+  const evidence=factors.filter(f=>Math.abs(f.raw)>=.25).sort((a,b)=>Math.abs(b.raw*b.weight)-Math.abs(a.raw*a.weight)).map(f=>f.name+": "+f.note);
+  const dataQuality=(fundRates.length>=4?1:0)+(oiVals.length>=8?1:0)+(lsVals.length>=8?1:0)+(x.index&&x.mark?1:0);
+  return{dir,score,confidence,strength,bull:Math.round(Math.max(0,weighted)*100),bear:Math.round(Math.max(0,-weighted)*100),funding,fundingAvg:fundAvg,oiNow,oiDelta,oiDelta1h,oiDelta12h,lsBuy:lsNow.buy,lsSell:lsNow.sell,lsAvgBuy:lsAvg.buy,lsAvgSell:lsAvg.sell,holderNet,holderAvgNet,holderShift,basis,basisRate,change,turn,liquidity:liq,regime,evidence,factors,dataQuality,sourceTimes:{funding:Number(fund[0]?.fundingRateTimestamp)||0,openInterest:Number(oi[0]?.timestamp)||0,holderRatio:Number(ls[0]?.timestamp)||0},source:"BYBIT FA2 • FUNDAMENTAL + DERIVATIVES MARKET CONTEXT",asOf:Date.now(),oiMethodVersion:"SINGLE_SIDED_2026-06-11",dataStatus:"OK"};
+ }).then(data=>{FA_CACHE.set(key,{ts:Date.now(),data});return data}).finally(()=>FA_INFLIGHT.delete(key));
+ FA_INFLIGHT.set(key,p);return p;
+}
+
+function ema(a,n){if(!a.length)return 0;const k=2/(n+1);let e=a[0];for(let i=1;i<a.length;i++)e=a[i]*k+e*(1-k);return e}
+function atr(a,n=14){if(a.length<n+1)return 0;const tr=[];for(let i=1;i<a.length;i++)tr.push(Math.max(a[i].h-a[i].l,Math.abs(a[i].h-a[i-1].c),Math.abs(a[i].l-a[i-1].c)));return tr.slice(-n).reduce((x,y)=>x+y,0)/n}
+function rsi(a,n=14){if(a.length<n+1)return 50;let gain=0,loss=0;for(let i=1;i<=n;i++){const d=a[i].c-a[i-1].c;gain+=Math.max(d,0);loss+=Math.max(-d,0)}let ag=gain/n,al=loss/n;for(let i=n+1;i<a.length;i++){const d=a[i].c-a[i-1].c;ag=(ag*(n-1)+Math.max(d,0))/n;al=(al*(n-1)+Math.max(-d,0))/n}if(al===0)return 100;return 100-100/(1+ag/al)}
+function emaSeries(values,n){
+ const v=values.map(Number).filter(Number.isFinite);if(v.length<n)return[];const out=new Array(n-1).fill(null);let e=v.slice(0,n).reduce((s,x)=>s+x,0)/n;out.push(e);const k=2/(n+1);for(let i=n;i<v.length;i++){e=v[i]*k+e*(1-k);out.push(e)}return out;
+}
+function macd(a){
+ const c=a.map(x=>x.c),e12=emaSeries(c,12),e26=emaSeries(c,26);if(!e26.length)return{hist:0,macd:0,signal:0};
+ const lines=[];for(let i=25;i<c.length;i++){const fast=e12[i],slow=e26[i];if(Number.isFinite(fast)&&Number.isFinite(slow))lines.push(fast-slow)}
+ if(lines.length<9)return{hist:0,macd:lines.at(-1)||0,signal:0};
+ const sigSeries=emaSeries(lines,9),line=lines.at(-1),signal=sigSeries.at(-1)||0;return{hist:line-signal,macd:line,signal};
+}
+function structure(a){const x=a.slice(-60),hi=Math.max(...x.map(v=>v.h)),lo=Math.min(...x.map(v=>v.l)),prior=x.slice(0,-8),last=a.at(-1),ph=Math.max(...prior.map(v=>v.h)),pl=Math.min(...prior.map(v=>v.l));return{hi,lo,break:last.c>ph?1:last.c<pl?-1:0,trend:ema(a.map(v=>v.c).slice(-100),20)>ema(a.map(v=>v.c).slice(-120),50)?1:-1,nearH:(hi-last.c)/(hi-lo||last.c)<.12,nearL:(last.c-lo)/(hi-lo||last.c)<.12,ph,pl}}
+function volRatio(a){const last=a.at(-1)?.v||0,base=a.slice(-21,-1).reduce((s,x)=>s+x.v,0)/20;return base?last/base:1}
+function divergence(a,R){if(a.length<30)return"NONE";const p=a.slice(-15),r=a.slice(-15).map((_,i)=>rsi(a.slice(0,a.length-15+i+1)));const ph=Math.max(...p.map(x=>x.h)),pl=Math.min(...p.map(x=>x.l)),rh=Math.max(...r),rl=Math.min(...r);return p.at(-1).h>=ph&&r.at(-1)<rh-2?"BEARISH":p.at(-1).l<=pl&&r.at(-1)>rl+2?"BULLISH":"NONE"}
+function baseScore(a,ticker){
+  if(a.length<60)throw new Error("Not enough candles");
+  const last=a.at(-1),prev=a.at(-2),cl=a.map(x=>x.c),e9=ema(cl.slice(-80),9),e21=ema(cl.slice(-100),21),e50=ema(cl.slice(-120),50),A=atr(a),R=rsi(a),M=macd(a),S=structure(a),VR=volRatio(a),D=divergence(a,R);
+  let long=0,short=0;
+  if(e9>e21)long+=12;else short+=12;if(e21>e50)long+=10;else short+=10;if(last.c>e21)long+=8;else short+=8;
+  if(S.break>0)long+=14;if(S.break<0)short+=14;if(M.hist>0)long+=8;else short+=8;if(R>=52&&R<=68)long+=7;if(R<=48&&R>=32)short+=7;
+  if(VR>=1.2){if(last.c>e21)long+=8;else short+=8} if(D==="BULLISH")long+=5;if(D==="BEARISH")short+=5;
+  if(ticker){if(ticker.funding>0.0015)short+=4;if(ticker.funding<-0.0015)long+=4;if(Math.abs(ticker.change)>=.03){if(ticker.change>0)long+=3;else short+=3}}
+  const total=Math.max(long,short),score=Math.max(1,Math.min(99,Math.round(50+total/1.15))),dir=long>short?"LONG":short>long?"SHORT":"WAIT";
+  const regime=Math.abs(e21-e50)/Math.max(A,last.c)*10000>7?"TREND":"RANGE",support=Math.min(S.pl,last.c-A),resistance=Math.max(S.ph,last.c+A),liq=S.nearH?"HIGH-SIDE":S.nearL?"LOW-SIDE":"MID-RANGE";
+  const structureLow=Math.min(S.pl,last.l),structureHigh=Math.max(S.ph,last.h);
+  const invalidation=dir==="LONG"?structureLow-A*.20:dir==="SHORT"?structureHigh+A*.20:last.c;
+  const rawRisk=dir==="LONG"?last.c-invalidation:dir==="SHORT"?invalidation-last.c:0;
+  const risk=Math.max(rawRisk,A*.80,last.c*.0025),entry=last.c;
+  const initialStop=dir==="LONG"?entry-risk:dir==="SHORT"?entry+risk:entry;
+  const tp1=dir==="LONG"?entry+risk*1.0:entry-risk*1.0,tp2=dir==="LONG"?entry+risk*2.0:entry-risk*2.0,tp3=dir==="LONG"?entry+risk*3.0:entry-risk*3.0;
+  const bullishTrigger=last.c>last.o&&last.c>prev.h,bearishTrigger=last.c<last.o&&last.c<prev.l;
+  const trigger=dir==="LONG"?(bullishTrigger?"LONG BREAKOUT CONFIRMED":"WAIT"):(dir==="SHORT"?(bearishTrigger?"SHORT BREAKDOWN CONFIRMED":"WAIT"):"WAIT");
+  const structureTxt=S.break?`${S.break>0?"BULLISH":"BEARISH"} BREAK CONFIRMED`:`${S.trend>0?"BULLISH":"BEARISH"} STRUCTURE`;
+  const rr=2.0;
+  const requirements={mtf:false,volume:VR>=1.2,trigger:trigger!=="WAIT",rr:rr>=1.5,score:score>=60,notExtended:Math.abs(last.c-e21)<=A*2.2};
+  const why=[];if(dir==="LONG"){if(e9>e21)why.push("EMA 9 is above EMA 21, showing short-term bullish momentum.");if(e21>e50)why.push("EMA 21 is above EMA 50, supporting the broader bullish structure.");if(last.c>e21)why.push("Price is above EMA 21.");if(M.hist>0)why.push("MACD histogram is positive.");if(VR>=1.2)why.push(`Volume is expanding at ${VR.toFixed(2)}x the 20-candle average.`);if(D==="BULLISH")why.push("Bullish divergence is detected.");if(bullishTrigger)why.push("Closed candle confirmed a bullish breakout trigger.")}else if(dir==="SHORT"){if(e9<e21)why.push("EMA 9 is below EMA 21, showing short-term bearish momentum.");if(e21<e50)why.push("EMA 21 is below EMA 50, supporting the broader bearish structure.");if(last.c<e21)why.push("Price is below EMA 21.");if(M.hist<0)why.push("MACD histogram is negative.");if(VR>=1.2)why.push(`Volume is expanding at ${VR.toFixed(2)}x the 20-candle average.`);if(D==="BEARISH")why.push("Bearish divergence is detected.");if(bearishTrigger)why.push("Closed candle confirmed a bearish breakdown trigger.")}if(!why.length)why.push("Signals are mixed, so the engine is not forcing a directional explanation.");
+  return{dir,score,regime,rr,entry,initialStop,invalidation,tp1,tp2,tp3,e9,e21,e50,rsi:R,macd:M.hist,volumeRatio:VR,support,resistance,divergence:D,structure:structureTxt,liq,trigger,requirements,why,candleTime:a.at(-1)?.t||0}
+}
+function validateAnalysis(a,where="analysis"){
+ const required=["dir","score","entry","initialStop","tp1","tp2","tp3","rsi","macd","volumeRatio","support","resistance","trigger","candleTime"];
+ for(const k of required){if(!(k in (a||{})))throw new Error(`${where}: missing canonical field ${k}`);}
+ if(!["LONG","SHORT","WAIT"].includes(a.dir))throw new Error(`${where}: invalid direction`);
+ for(const k of ["score","entry","initialStop","tp1","tp2","tp3","rsi","macd","volumeRatio","support","resistance","candleTime"]){if(!Number.isFinite(Number(a[k])))throw new Error(`${where}: non-finite ${k}`);}
+ return a;
+}
+function canonicalMtfFromFrames(frames,order){
+ const vals=order.map(tf=>frames?.[tf]||null),complete=vals.length===order.length&&vals.every(x=>x&&x.dir!=="WAIT"),longs=vals.filter(x=>x?.dir==="LONG").length,shorts=vals.filter(x=>x?.dir==="SHORT").length;
+ const consensus=complete?(longs>shorts?"LONG":shorts>longs?"SHORT":"WAIT"):"WAIT",align=complete?Math.max(longs,shorts)/order.length:0;
+ return{frames:Object.fromEntries(order.map(tf=>[tf,frames?.[tf]||null])),consensus,align,valid:complete?order.length:0,requiredFrames:order.length,complete};
+}
+async function mtf(symbol,ticker,tf=state.scannerTf){
+ const out={},order=contextTFs(tf);for(const f of order){try{out[f]=validateAnalysis(baseScore(await candles(symbol,f),ticker),`MTF ${symbol} ${f}`)}catch{out[f]={dir:"WAIT",score:0}}}return canonicalMtfFromFrames(out,order);
+}
+function classify(a,m){const align=m?.align||0;const mtf=m?.complete===true&&m?.consensus===a.dir&&align>=.75;const ready=a.score>=80&&mtf&&a.volumeRatio>=1.2&&a.rr>=1.5&&a.trigger!=="WAIT"&&a.requirements.notExtended;const watch=a.score>=70;const conf=a.score>=60;let status=ready?"READY":watch?"WATCH":conf?"CONFLUENCE":"SKIP";return{...a,status,mtfReady:mtf,tradeEligible:conf&&a.rr>=1.5&&mtf,autoExecute:ready}}
+
+// V36 CANONICAL SCANNER CONTRACT
+// Status is the primary rank dimension. Secondary scores may only break ties
+// inside the same status; they can never promote WATCH/CONFLUENCE above READY.
+const SCANNER_STATUS_PRIORITY=Object.freeze({READY:3,WATCH:2,CONFLUENCE:1,SKIP:0});
+function scannerStatusRank(row){return SCANNER_STATUS_PRIORITY[String(row?.a?.status||"").trim().toUpperCase()]??0}
+function compareScannerRows(a,b){
+ const ap=scannerStatusRank(a),bp=scannerStatusRank(b);
+ if(ap!==bp)return bp-ap;
+ const ae=a?.styleDecision?.eligible?1:0,be=b?.styleDecision?.eligible?1:0;
+ if(ae!==be)return be-ae;
+ const as=Number(a?.styleDecision?.score)||0,bs=Number(b?.styleDecision?.score)||0;
+ if(as!==bs)return bs-as;
+ const at=a?.a?.tradeEligible?1:0,bt=b?.a?.tradeEligible?1:0;
+ if(at!==bt)return bt-at;
+ const ax=Number(a?.a?.score)||0,bx=Number(b?.a?.score)||0;
+ if(ax!==bx)return bx-ax;
+ const aa=Number(a?.m?.align)||0,ba=Number(b?.m?.align)||0;
+ if(aa!==ba)return ba-aa;
+ return String(a?.symbol||"").localeCompare(String(b?.symbol||""));
+}
+function rankScannerRows(rows){return(Array.isArray(rows)?[...rows]:[]).sort(compareScannerRows)}
+function assertCanonicalScannerOrder(rows){for(let i=1;i<(rows||[]).length;i++){if(compareScannerRows(rows[i-1],rows[i])>0)throw new Error(`Canonical scanner rank invariant violated at ${i}`)}return rows}
+function hasCanonicalScannerPlan(a){
+ const dir=String(a?.dir||"").toUpperCase();
+ const [entry,stop,tp1,tp2,tp3,inv]=[a?.entry,a?.initialStop,a?.tp1,a?.tp2,a?.tp3,a?.invalidation].map(Number);
+ if(!["LONG","SHORT"].includes(dir)||[entry,stop,tp1,tp2,tp3,inv].some(v=>!Number.isFinite(v)))return false;
+ return dir==="LONG"?(inv<entry&&stop<entry&&tp1>entry&&tp2>tp1&&tp3>tp2):(inv>entry&&stop>entry&&tp1<entry&&tp2<tp1&&tp3<tp2);
+}
+function isCanonicalStyleReady(x){return x?.a?.status==="READY"&&!!x?.styleDecision?.eligible&&Number(x?.styleDecision?.score)>=80&&x?.styleDecision?.dir!=="WAIT"&&hasCanonicalScannerPlan(x?.a)}
+function topCanonicalTrade(rows){return rankScannerRows((Array.isArray(rows)?rows:[]).filter(isCanonicalStyleReady))[0]||null}
+
+function tradeReason(a,m){const bits=[];bits.push(`${m.align>=.75?Math.round(m.align*100)+"% MTF alignment":"MTF alignment "+Math.round(m.align*100)+"%"}`);bits.push(a.volumeRatio>=1.2?`volume expanding (${fixed(a.volumeRatio,2)}x)`:`volume ${fixed(a.volumeRatio,2)}x`);bits.push(a.structure);bits.push(`RSI ${a.rsi.toFixed(1)}`);bits.push(`MACD histogram ${a.macd>=0?"positive":"negative"}`);bits.push(`closed-candle S/R respected`);return bits.join(" • ")}
+function tradeValidity(tf){return tf==="D"?"1D":tf==="60"?"1H":tf==="240"?"4H":tf+"m"}
+
+
+function renderTopMatrix(){
+ const st=activeTradeStyle(),rows=rankScannerRows((Array.isArray(state.analysisRows)?state.analysisRows:[]).filter(isCanonicalStyleReady)),matrix=$("matrix"),fresh=$("scanFreshness"),near=$("nearMisses");
+ if(!rows.length){matrix.innerHTML=`<div class="empty">No ${st.name} setup is ready right now. The scanner may still have 15m-qualified opportunities, but the selected holding style has not passed its own confirmation gate.</div>`;fresh.style.display='none';near.style.display=state.lastScanDiagnostics?.nearMisses?.length?'block':'none';if(near.style.display==='block')renderNearMisses();return}
+ const cards=rows.map((x,i)=>{const a=x.a,m=x.m||{},fa=x.fa||{},d=x.styleDecision;return `<article class="qualification-item"><div class="qhead"><span>#${i+1} ${cleanSym(x.symbol)}</span><span>${st.icon} ${st.name} • ${d.score}%</span></div><small><b>${d.dir}</b> • Primary ${tradeValidity(st.primaryTf)} • MTF ${Math.round((d.align||0)*100)}% • <span class="regime-badge">${escapeHtml(a.regime||"UNKNOWN")}</span></small><small>Signal ${fmt(d.entry,8)} • SL ${fmt(d.initialStop,8)} • TP1 ${fmt(d.tp1,8)} • TP2 ${fmt(d.tp2,8)} • TP3 ${fmt(d.tp3,8)}</small><small>Hold ${st.horizon} • FA ${fa.score||0}% • ${escapeHtml(d.reason||"Style-qualified setup")}</small></article>`}).join("");
+ matrix.innerHTML=`<div class="qualified-count">${rows.length} ${st.icon} ${st.name.toUpperCase()} OPPORTUNIT${rows.length===1?'Y':'IES'} • STYLE-SPECIFIC TA + MTF + FA</div><div class="qualification-grid">${cards}</div>`;
+ const f=state.lastScanDiagnostics?.freshness||{};fresh.style.display='block';fresh.innerHTML=`<b>DATA FRESHNESS</b> • Scan ${f.scanAgeSec!=null?f.scanAgeSec+"s ago":"—"} • 15m closed candle ${f.baseCandleAgeMin!=null?f.baseCandleAgeMin+"m old":"—"} • MTF latest ${f.mtfLatestAgeMin!=null?f.mtfLatestAgeMin+"m old":"—"} • FA source context ${f.faAgeSec!=null?f.faAgeSec+"s since computation":"—"} • Closed-candle sequencing active`;
+ renderNearMisses();
+}
+function renderNearMisses(){const near=$('nearMisses'),items=state.lastScanDiagnostics?.nearMisses||[];if(!items.length){near.style.display='none';return}near.style.display='block';near.innerHTML=`<div class="near-miss-head"><span>🧪 NEAR-MISS DIAGNOSTICS</span><span>${state.lastScanDiagnostics.deepCandidates||0} deep-evaluated</span></div>${items.slice(0,12).map(x=>`<div class="near-miss-row"><b>${cleanSym(x.symbol)}</b><span>Score ${x.score}%</span><span>${escapeHtml(x.reason)}</span></div>`).join('')}`}
+
+
+// V30 canonical card-image copy UI; presentation-only and event-delegated.
+
+let lib=null,loading=null;
+const toast=(msg,ok=true)=>{let t=document.getElementById('v31CardCopyToast');if(!t){t=document.createElement('div');t.id='v31CardCopyToast';t.className='v30-card-copy-toast';document.body.appendChild(t)}t.textContent=msg;t.style.background=ok?'#0b5f91':'#a13b3b';t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove('show'),1800)};
+const load=async()=>{if(lib)return lib;if(loading)return loading;loading=import('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/+esm').then(m=>m.default||m.html2canvas||m).catch(e=>{loading=null;throw e});return loading};
+const copy=async(btn)=>{const card=btn.closest('.scanner-card');if(!card)return;const bs=[...card.querySelectorAll('[data-v31-card-copy]')];bs.forEach(b=>b.classList.add('copied'));try{if(!navigator.clipboard?.write||typeof ClipboardItem==='undefined')throw new Error('IMAGE_CLIPBOARD_UNSUPPORTED');const html2canvas=await load();const canvas=await html2canvas(card,{backgroundColor:null,scale:Math.min(2,Math.max(1,window.devicePixelRatio||1)),useCORS:true,logging:false,removeContainer:true,ignoreElements:el=>el?.hasAttribute?.('data-v31-card-copy')});const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob)throw new Error('IMAGE_CREATE_FAILED');await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);toast('✓ Entire card copied — Reason For Entry included');}catch(e){console.error('V31 card image copy:',e);toast(e.message==='IMAGE_CLIPBOARD_UNSUPPORTED'?'Copy image is not supported by this browser':'Copy failed — browser blocked image clipboard',false)}finally{setTimeout(()=>bs.forEach(b=>b.classList.remove('copied')),500)}};
+window.__V31_CARD_IMAGE_COPY__={copy};
+const install=()=>{const host=document.getElementById('scanner');if(!host||host.dataset.v30CopyBound)return;host.dataset.v30CopyBound='1';host.addEventListener('click',e=>{const b=e.target.closest('[data-v31-card-copy]');if(!b)return;e.preventDefault();e.stopPropagation();copy(b)});};
+install();
+window.__V31_CARD_IMAGE_COPY_INSTALL__=install;
+async function scan(){
+
+ if(scanBusy)return;
+ scanBusy=true;
+ const generation=++scanGeneration;const scanStartedAt=Date.now();setStatus(`Building BYBIT scanner universe…`);$("scanMeta").textContent="Scanning…";state.lastScanDiagnostics={candidates:0,basePassed:0,deepCandidates:0,deepPassed:0,qualified:0,nearMisses:[],errors:[],scanStartedAt,freshness:{}};state.analysisRows=[];
+ try{
+  const[ins,tks]=await Promise.all([instruments(),tickers()]);const normIns=ins.map(normalizeInstrument).filter(x=>x.symbol);const im=new Map(normIns.map(x=>[x.symbol,x]));state.instrumentMeta=Object.fromEntries(normIns.map(x=>[x.symbol,x]));const eligible=tks.filter(t=>im.has(t.symbol));let candidates=eligible.sort((a,b)=>b.turn-a.turn);
+  candidates=candidates.filter(t=>{const m=im.get(t.symbol);return m?.status==="Trading"&&!m?.isPreListing});
+  const min=state.cap==="large"?1e7:state.cap==="mid"?1e6:0;candidates=candidates.filter(t=>t.turn>=min).slice(0,60);state.lastScanDiagnostics.candidates=candidates.length;
+  const baseRows=[];for(let i=0;i<candidates.length;i+=6){const part=candidates.slice(i,i+6);const got=await Promise.all(part.map(async t=>{try{const c=await candles(t.symbol,state.scannerTf),a=validateAnalysis(baseScore(c,t),`Scanner ${t.symbol}`);return {symbol:t.symbol,a,ticker:t,instrument:im.get(t.symbol)||null,baseCandleTime:a.candleTime}}catch(e){state.lastScanDiagnostics.errors.push({symbol:t.symbol,error:String(e?.message||e)});return null}}));baseRows.push(...got.filter(Boolean));state.lastScanDiagnostics.basePassed=baseRows.length;setStatus(`Base scan ${Math.min(i+6,candidates.length)}/${candidates.length} • BYBIT`)}
+  if(candidates.length&&!baseRows.length)throw new Error(`Scanner produced zero valid analyses. First error: ${state.lastScanDiagnostics.errors[0]?.error||"unknown analysis failure"}`);
+  baseRows.sort((x,y)=>y.a.score-x.a.score);
+  const deepRows=baseRows.filter(x=>x.a.score>=60);state.lastScanDiagnostics.deepCandidates=deepRows.length;
+  const evaluated=[];
+  for(let i=0;i<deepRows.length;i+=4){
+   const part=deepRows.slice(i,i+4);
+   const got=await Promise.all(part.map(async x=>{try{const [fa,m]=await Promise.all([fundamentalContext(x.ticker).then(normalizeFAContext),mtf(x.symbol,x.ticker,state.scannerTf)]);x.fa=fa;x.m=m;const a=classify(x.a,m);const q={score:a.score>=60,mtf:m.complete===true&&m.consensus===a.dir&&m.align>=.75,volume:a.volumeRatio>=1.2,rr:a.rr>=1.5,trigger:a.trigger!=="WAIT",notExtended:a.requirements.notExtended};a.qualification=q;return {...x,a,reason:tradeReason(a,m)}}catch(e){state.lastScanDiagnostics.errors.push({symbol:x.symbol,error:`Deep evaluation: ${String(e?.message||e)}`});return null}}));evaluated.push(...got.filter(Boolean));state.lastScanDiagnostics.deepPassed=evaluated.length;setStatus(`Deep qualification ${Math.min(i+4,deepRows.length)}/${deepRows.length} • TA + MTF + FA`)
+  }
+  const allRows=evaluated.slice();
+  const selectedStyle=activeTradeStyle(),styleModel={id:"TAFA",name:"Technical + Fundamental",tag:"TA + FA",desc:"Selected trade-style execution lens."};
+  for(const x of allRows){try{x.styleDecision=strategyDecision(x,styleModel,{...selectedStyle,minAlign:.75,tf:selectedStyle.primaryTf,maxExt:selectedStyle.id==="SCALPER"?1.8:selectedStyle.id==="DAY"?2.2:selectedStyle.id==="SWING"?2.6:3});}catch(e){x.styleDecision={eligible:false,status:"NO TRADE",reason:"Trade-style evaluation unavailable."}}}
+  const rankedRows=rankScannerRows(allRows);
+  assertCanonicalScannerOrder(rankedRows);
+  const qualified=rankedRows.filter(x=>x.a.tradeEligible===true);
+  const nearMisses=rankedRows.filter(x=>!x.a.tradeEligible).map(x=>{const q=x.a.qualification||{};const reasons=[];if(!q.score)reasons.push("score below 60");if(!q.mtf)reasons.push("MTF incomplete/misaligned");if(!q.volume)reasons.push("volume below 1.2x");if(!q.rr)reasons.push("R:R below 1.5");if(!q.trigger)reasons.push("closed-candle trigger not confirmed");if(!q.notExtended)reasons.push("price extended from EMA21");return{symbol:x.symbol,score:x.a.score,reason:reasons.join(" • ")||"did not satisfy qualification gate"}}).sort((a,b)=>b.score-a.score);
+  state.lastScanDiagnostics.qualified=qualified.length;state.lastScanDiagnostics.nearMisses=nearMisses;
+  const now=Date.now();const baseTimes=rankedRows.map(x=>Number(x.baseCandleTime)).filter(Number.isFinite);const mtfTimes=rankedRows.flatMap(x=>Object.values(x.m?.frames||{}).map(z=>Number(z?.candleTime)).filter(Number.isFinite));const faSourceTimes={funding:rankedRows.map(x=>Number(x.fa?.sourceTimes?.funding)).filter(v=>v>0),openInterest:rankedRows.map(x=>Number(x.fa?.sourceTimes?.openInterest)).filter(v=>v>0),holderRatio:rankedRows.map(x=>Number(x.fa?.sourceTimes?.holderRatio)).filter(v=>v>0)};const ageMin=arr=>arr.length?Math.max(0,Math.round((now-Math.max(...arr))/60000)):null;const faTimes=rankedRows.map(x=>Number(x.fa?.asOf)).filter(Number.isFinite);state.lastScanDiagnostics.scanFinishedAt=now;state.lastScanDiagnostics.freshness={scanAgeSec:0,baseCandleAgeMin:ageMin(baseTimes),mtfLatestAgeMin:ageMin(mtfTimes),faAgeSec:faTimes.length?Math.max(0,Math.round((now-Math.max(...faTimes))/1000)):null,fundingSourceAgeMin:ageMin(faSourceTimes.funding),oiSourceAgeMin:ageMin(faSourceTimes.openInterest),holderSourceAgeMin:ageMin(faSourceTimes.holderRatio)};
+  if(generation!==scanGeneration)return;
+  const canonicalRows=rankedRows.map((x,i)=>({...x,rank:i+1,top:i<3}));
+  state.analysisRows=canonicalRows;
+  state.qualifiedRows=canonicalRows.filter(x=>x.a.tradeEligible===true).map((x,i)=>({...x,qualifiedRank:i+1}));
+  state.scanRows=canonicalRows.slice(0,state.limit);
+  assertCanonicalScannerOrder(state.scanRows);
+  renderScanner();renderTopMatrix();const styleReady=allRows.filter(x=>x.styleDecision?.eligible).length;$("scanMeta").textContent=`${state.scanRows.length} ranked • ${qualified.length} qualified • ${styleReady} ${selectedStyle.name} ready • ${candidates.length} candidates • ${state.lastScanDiagnostics.errors.length} non-fatal errors`;setStatus(`LIVE • BYBIT • ${selectedStyle.name.toUpperCase()} • QUALIFIED ${qualified.length} • STYLE READY ${styleReady}`,true);autoPaperFromScanner();maybeOpenStrategyEntries();renderStyleDesk();
+ }catch(e){if(generation===scanGeneration){setStatus("Scan error: "+e.message,false,true);$("scanMeta").textContent=`SCAN FAILED • ${e.message}`;state.scanRows=[];state.analysisRows=[];state.qualifiedRows=[];renderScanner();renderTopMatrix()}}finally{scanBusy=false}}
+
+function filteredRows(){
+ const sf=$("statusFilter").value,df=$("dirFilter").value,min=+$('minScore').value,tf=$("topFilter").value,q=$("pairSearch").value.trim().toUpperCase();
+ const source=Array.isArray(state.analysisRows)?state.analysisRows:[];
+ const ranked=rankScannerRows(source).slice(0,state.limit).map((x,i)=>({...x,rank:i+1,top:i<3}));
+ return ranked.filter(x=>(sf==="ALL"||x.a.status===sf)&&(df==="ALL"||x.a.dir===df)&&x.a.score>=min&&(tf==="ALL"||x.top)&&(!q||cleanSym(x.symbol).includes(q)));
+}
+function renderScanner(){
+ const rows=filteredRows();
+ const topTrade=topCanonicalTrade(state.analysisRows);
+ const topKey=topTrade?`${topTrade.symbol}|${topTrade.styleDecision?.dir||topTrade.a?.dir||""}|${topTrade.styleDecision?.candleTime||topTrade.a?.candleTime||0}`:"";
+ $("scanner").innerHTML=rows.map(x=>{
+  const a=x.a,m=x.m||{},label=a.status==="READY"?"READY":a.status==="WATCH"?"WATCH":"CONFLUENCE",cls=a.status==="READY"?"ready":a.status==="WATCH"?"watch":"conf";
+  const st=activeTradeStyle(),sd=x.styleDecision;
+  const key=`${x.symbol}|${sd?.dir||a.dir||""}|${sd?.candleTime||a.candleTime||0}`;
+  const isTopTrade=!!topKey&&key===topKey;
+  const scannerPlan=(a.status==="READY"&&hasCanonicalScannerPlan(a))?`<div class="style-plan"><h4>📊 ${a.dir} • SCANNER TRADE PLAN <span class="style-badge">READY ${a.score}%</span></h4><div class="style-meta">Signal TF <b>${tradeValidity(state.scannerTf)}</b> • Scanner status <b>${a.status}</b> • MTF ${Math.round((m.align||0)*100)}% • Signal Price <b>${fmt(a.entry,8)}</b> • Paper fill uses the current Bybit reference price at entry time.</div><div class="style-levels"><div class="style-level"><small>SIGNAL PRICE</small><b>${fmt(a.entry,8)}</b></div><div class="style-level"><small>SL</small><b>${fmt(a.initialStop,8)}</b></div><div class="style-level"><small>TP1</small><b>${fmt(a.tp1,8)}</b></div><div class="style-level"><small>TP2</small><b>${fmt(a.tp2,8)}</b></div><div class="style-level"><small>TP3</small><b>${fmt(a.tp3,8)}</b></div><div class="style-level"><small>INVALIDATION</small><b>${fmt(a.invalidation,8)}</b></div></div><div class="style-reason">🎯 <b>SCANNER BASIS:</b> ${escapeHtml((a.why||[]).slice(0,3).join(" • ")||"Canonical READY scanner qualification passed.")} <b>Style confirmation remains a separate gate for paper entry.</b></div></div>`:"";
+  const stylePlan=(a.status==="READY"&&isCanonicalStyleReady(x))?`<div class="style-plan"><h4>${st.icon} ${sd.dir} • ${st.name.toUpperCase()} TRADE PLAN <span class="style-badge">STYLE READY</span></h4><div class="style-meta">Signal TF <b>${tradeValidity(st.primaryTf)}</b> • Holding horizon <b>${st.horizon}</b> • MTF ${Math.round((sd.align||0)*100)}% • Signal Price <b>${fmt(sd.entry,8)}</b> • Paper fill is taken from the current Bybit reference price at entry time.</div><div class="style-levels"><div class="style-level"><small>SIGNAL PRICE</small><b>${fmt(sd.entry,8)}</b></div><div class="style-level"><small>SL</small><b>${fmt(sd.initialStop,8)}</b></div><div class="style-level"><small>TP1</small><b>${fmt(sd.tp1,8)}</b></div><div class="style-level"><small>TP2</small><b>${fmt(sd.tp2,8)}</b></div><div class="style-level"><small>TP3</small><b>${fmt(sd.tp3,8)}</b></div><div class="style-level"><small>INVALIDATION</small><b>${fmt(sd.invalidation,8)}</b></div></div><div class="style-reason">🎯 <b>WHY THIS STYLE:</b> ${escapeHtml(sd.reason)} • The selected ${st.name} mode uses ${tradeValidity(st.primaryTf)} as its primary decision timeframe. <b>System paper entry will use the current Bybit reference price, not the historical signal close.</b></div></div>`:"";
+  const styleWait=a.status==="READY"&&!stylePlan?`<div class="style-wait"><b>${st.icon} ${st.name.toUpperCase()} MODE:</b> Scanner status is <b>READY</b>, so the canonical scanner Trade Plan is active. The selected style is not yet ready for paper entry. ${escapeHtml(sd?.reason||"Waiting for style-specific confirmation.")}</div>`:"";
+  const plan=stylePlan||scannerPlan||styleWait||(a.status!=="READY"?`<div class="style-wait"><b>SCANNER TRADE PLAN:</b> Waiting for canonical READY status. ${label} cannot issue an actionable plan.</div>`:"");
+  const tfs=Object.entries(m.frames||{}).slice(-3).map(([f,z])=>`<div class="tfbox"><small>${f==="240"?"4H":f==="60"?"1H":f==="D"?"1D":f+"m"}</small><b style="color:${z.dir==="LONG"?"var(--green)":z.dir==="SHORT"?"var(--red)":"var(--muted)"}">${z.dir}</b></div>`).join("");
+  return `<article class="scanner-card v31-copy-ready ${cls}" data-rank="${x.rank}"><button class="v31-card-copy-btn tl" type="button" data-v31-card-copy aria-label="Copy entire card as image" title="Copy entire card as image">⧉</button><button class="v31-card-copy-btn tr" type="button" data-v31-card-copy aria-label="Copy entire card as image" title="Copy entire card as image">⧉</button><button class="v31-card-copy-btn bl" type="button" data-v31-card-copy aria-label="Copy entire card as image" title="Copy entire card as image">⧉</button><button class="v31-card-copy-btn br" type="button" data-v31-card-copy aria-label="Copy entire card as image" title="Copy entire card as image">⧉</button>
+   <div class="card-top"><div class="rank">#${x.rank}</div><div><div class="pair">${cleanSym(x.symbol)}</div><div class="pair-sub">BYBIT FUTURES</div></div>${isTopTrade?'<span class="toptrade">⭐ TOP TRADE</span>':'<span></span>'}<span class="badge-status ${cls==="ready"?"ready-b":cls==="watch"?"watch-b":"conf-b"}">${label} • ${a.score}%</span></div>
+   <div class="card-price"><div class="price-label">LIVE PRICE • BYBIT FUTURES LAST</div><div class="price">${fmt(x.ticker.last,8)}</div><div class="ema-note ${a.dir==="LONG"?"long":"short"}">${a.dir==="LONG"?"▲ Above":"▼ Below"} EMA21</div></div>
+   <div class="signal"><span class="style-badge">${st.name}</span> ${a.dir==="LONG"?"🟢":a.dir==="SHORT"?"🔴":"⚪"} ${a.status} ${a.dir} • AI Confidence ${a.score}%<div class="scorebar"><i style="width:${Math.min(100,a.score)}%"></i></div></div>
+   <div class="tfgrid">${tfs}</div>
+   <div class="detailgrid"><div class="detail"><small>RSI 14</small><b>${fixed(a.rsi,4)}</b></div><div class="detail"><small>MACD Hist</small><b>${fixed(a.macd,4)}</b></div><div class="detail"><small>EMA 9</small><b>${fmt(a.e9,8)}</b></div><div class="detail"><small>EMA 21</small><b>${fmt(a.e21,8)}</b></div><div class="detail"><small>EMA 50</small><b>${fmt(a.e50,8)}</b></div><div class="detail"><small>Volume</small><b>${fixed(a.volumeRatio,2)}x</b></div><div class="detail"><small>Support</small><b>${fmt(a.support,8)}</b></div><div class="detail"><small>Resistance</small><b>${fmt(a.resistance,8)}</b></div></div>
+   <div class="trigger"><b>${tradeValidity(state.scannerTf)} Trigger: ${a.trigger}</b><br>Volume: <b>${a.volumeRatio>=1.2?"EXPANDING":"NORMAL"}</b> (${fixed(a.volumeRatio,2)}x) &nbsp; Structure: <b>${a.structure}</b><br>Divergence: <b>${a.divergence}</b> &nbsp; Closed-candle S/R: <b>CONFIRMED</b></div><div class="setup-quality"><b>SETUP QUALITY:</b> ${a.status==="READY"?"High-confluence setup":a.status==="WATCH"?"Developing setup":"Contextual confluence"} • MTF ${Math.round((m.align||0)*100)}% • Volume ${fixed(a.volumeRatio,2)}x • <span class="regime-badge">${escapeHtml(a.regime||"UNKNOWN")}</span></div><div class="qualification-check"><b>QUALIFICATION CHECK:</b> ${Object.entries(a.qualification||{}).map(([k,v])=>`<span class='${v?'qpass':'qfail'}'>${v?'✓':'✗'} ${k}</span>`).join(' • ')}</div>
+   ${x.fa?`<div class="trigger"><b>FA2 • FUNDAMENTAL / DERIVATIVES CONTEXT:</b> ${x.fa.dir} • Strength ${x.fa.strength||0}% • Confidence ${x.fa.confidence||0}% • ${escapeHtml(x.fa.regime||"NEUTRAL")}<br>OI 1h ${x.fa.oiDelta1h>=0?"▲":"▼"}${fixed(Math.abs((x.fa.oiDelta1h||0)*100),1)}% • 6h ${x.fa.oiDelta>=0?"▲":"▼"}${fixed(Math.abs((x.fa.oiDelta||0)*100),1)}% • 12h ${x.fa.oiDelta12h>=0?"▲":"▼"}${fixed(Math.abs((x.fa.oiDelta12h||0)*100),1)}%<br>Funding ${fixed(x.fa.funding,4)} • Holder Net ${fixed((x.fa.holderNet||0)*100,1)}% • Basis ${fixed(x.fa.basis*100,2)}% • Liquidity ${x.fa.liquidity} • Data ${x.fa.dataQuality||0}/4<br>${escapeHtml((x.fa.evidence||[]).slice(0,3).join(" • ")||"No decisive FA evidence")}</div>`:""}
+   ${plan||'<div class="paper-auto">Trade plan unavailable because this row is not canonically READY.</div>'}
+  </article>`;
+ }).join("")||'<div class="empty">No pair matches the current scanner filters.</div>';
+}
+
+
+const TRADE_STYLE_CONFIG=Object.freeze({
+ SCALPER:Object.freeze({id:"SCALPER",name:"Scalper",icon:"⚡",primaryTf:"15",horizon:"minutes → a few hours",maxHoldMs:6*3600000,riskAtr:.75,maxDriftPct:.75}),
+ DAY:Object.freeze({id:"DAY",name:"Day Trader",icon:"🔥",primaryTf:"60",horizon:"hours → same day",maxHoldMs:24*3600000,riskAtr:1,maxDriftPct:1.25}),
+ SWING:Object.freeze({id:"SWING",name:"Swing Trader",icon:"🌊",primaryTf:"240",horizon:"days → several weeks",maxHoldMs:21*86400000,riskAtr:1.25,maxDriftPct:2}),
+ POSITION:Object.freeze({id:"POSITION",name:"Position Trader",icon:"🏔️",primaryTf:"D",horizon:"weeks → months",maxHoldMs:90*86400000,riskAtr:1.5,maxDriftPct:4})
+});
+function activeTradeStyle(){return TRADE_STYLE_CONFIG[state.tradeStyle]||TRADE_STYLE_CONFIG.DAY}
+function renderStyleDesk(){const st=activeTradeStyle(),primary=tradeValidity(st.primaryTf),frames=st.id==="SCALPER"?"15m → 1H → 4H → 1D":st.id==="DAY"?"15m → 1H → 4H → 1D":st.id==="SWING"?"1H → 4H → 1D":"4H → 1D";const host=$("styleDesk");if(!host)return;host.innerHTML=`<span class="style-title">TRADE STYLE</span><span class="style-pill">${st.icon} <b>${st.name}</b></span><span class="style-pill">PRIMARY <b>${primary}</b></span><span class="style-pill">HOLD <b>${st.horizon}</b></span><span class="style-pill">MTF <b>${frames}</b></span><span class="style-note">Signal uses closed candles. Paper fill uses current Bybit reference price; if price has moved beyond the style drift guard, the system waits instead of fabricating a fill.</span>`}
+const STRATEGY_MODES=[
+ {id:"TA",name:"Technical Analysis",tag:"TA",desc:"Technical structure, momentum, volume, trigger and MTF alignment."},
+ {id:"FA",name:"Fundamental Analysis",tag:"FA",desc:"FA2: independent Bybit fundamental/derivatives context — OI participation, funding/carry, holder sentiment, basis, limited momentum and liquidity quality."},
+ {id:"TAFA",name:"Technical + Fundamental",tag:"TA + FA",desc:"Technical setup must agree with the Bybit market-context layer."}
+];
+const TRADER_STYLES=[
+ {id:"SCALPER",name:"Scalper",tf:"15",minAlign:.75,riskAtr:.75,maxExt:1.8},
+ {id:"DAY",name:"Day Trader",tf:"60",minAlign:.75,riskAtr:1.0,maxExt:2.2},
+ {id:"SWING",name:"Swing Trader",tf:"240",minAlign:.75,riskAtr:1.25,maxExt:2.6},
+ {id:"POSITION",name:"Position Trader",tf:"D",minAlign:.75,riskAtr:1.5,maxExt:3.0}
+];
+function laneKey(mode,style){return mode+"__"+style}
+const MIN_SAMPLE_FOR_BEST=30;
+const PAPER_FEE_RATE=.00055;
+const PAPER_SLIPPAGE_BPS=2;
+const STRATEGY_COOLDOWN_CANDLES=2;
+const PARTIAL_QTY=.3333333333333333;
+
+function freshLane(m,st){return{analysis:m.id,style:st.id,equity:10000,trades:[],open:null,wins:0,pnl:0,signals:{},accountingVersion:PAPER_ACCOUNTING_VERSION,maxDrawdown:0,peakEquity:10000,currentStreak:0,maxWinStreak:0,maxLossStreak:0}}
+function ensureStrategyState(){
+ if(!state.strategyLab||typeof state.strategyLab!=="object")state.strategyLab={version:STRATEGY_LAB_VERSION,lanes:{},legacyArchives:[]};
+ if(!Array.isArray(state.strategyLab.legacyArchives))state.strategyLab.legacyArchives=[];
+ if(state.strategyLab.version!==STRATEGY_LAB_VERSION){
+   const legacy={version:state.strategyLab.version||"unknown",lanes:state.strategyLab.lanes||{},archivedAt:Date.now(),reason:"V31 strategy/accounting contract changed; the complete legacy lab is preserved separately and excluded from current metrics."};
+   state.strategyLab.legacyArchives.push(legacy);
+   state.strategyLab.version=STRATEGY_LAB_VERSION;state.strategyLab.lanes={};
+ }
+ for(const m of STRATEGY_MODES)for(const st of TRADER_STYLES){const k=laneKey(m.id,st.id);if(!state.strategyLab.lanes[k])state.strategyLab.lanes[k]=freshLane(m,st);let l=state.strategyLab.lanes[k];if(l.accountingVersion!==PAPER_ACCOUNTING_VERSION){state.strategyLab.legacyArchives.push({version:state.strategyLab.version,lane:k,laneData:l,archivedAt:Date.now(),reason:"Lane accounting version mismatch; lane replaced with a clean current-accounting ledger. Legacy lane is excluded from current metrics."});l=freshLane(m,st);state.strategyLab.lanes[k]=l}if(!l.signals)l.signals={};l.peakEquity=Number(l.peakEquity)||Number(l.equity)||10000;l.maxDrawdown=Number(l.maxDrawdown)||0;l.currentStreak=Number(l.currentStreak)||0;l.maxWinStreak=Number(l.maxWinStreak)||0;l.maxLossStreak=Number(l.maxLossStreak)||0}
+}
+function lane(st,m){ensureStrategyState();return state.strategyLab.lanes[laneKey(m.id,st.id)]}
+const CANONICAL_MTF_REQUIREMENTS=Object.freeze({
+ SCALPER:Object.freeze(["15","60","240","D"]),
+ DAY:Object.freeze(["15","60","240","D"]),
+ SWING:Object.freeze(["60","240","D"]),
+ POSITION:Object.freeze(["240","D"])
+});
+function styleFrame(x,st){return x?.m?.frames?.[st.tf]||null}
+function canonicalStrategyMtf(x,st){
+ const order=CANONICAL_MTF_REQUIREMENTS[st.id]||CANONICAL_MTF_REQUIREMENTS.SCALPER;
+ const out=canonicalMtfFromFrames(x?.m?.frames||{},order),entry=styleFrame(x,st),dir=entry?.dir||"WAIT";
+ const aligned=out.complete&&dir!=="WAIT"&&out.consensus===dir;
+ return{...out,consensus:aligned?dir:"WAIT",align:aligned?out.align:0,entryFrame:st.tf,mtf:true};
+}
+function marketContext(x){return x?.fa||{dir:"WAIT",score:0,strength:0,confidence:0,bull:0,bear:0,regime:"NO DATA",dataQuality:0,funding:Number(x?.ticker?.funding)||0,fundingAvg:0,oiNow:Number(x?.ticker?.singleOI||x?.ticker?.oi)||0,oiDelta:0,lsBuy:.5,lsSell:.5,lsAvgBuy:.5,lsAvgSell:.5,basis:0,change:Number(x?.ticker?.change)||0,turn:Number(x?.ticker?.turn)||0,liquidity:"LOW",evidence:[],sourceTimes:{funding:0,openInterest:0,holderRatio:0},source:"BYBIT DERIVATIVES FUNDAMENTAL CONTEXT"}}
+function faDirection(x){return marketContext(x).dir}
+function strategyDecision(x,m,st){
+ const ctx=marketContext(x),faDir=faDirection(x),sm=canonicalStrategyMtf(x,st),a=styleFrame(x,st),sc=x.a;
+ if(m.id==="FA"){
+  const eligible=ctx.dir!=="WAIT"&&ctx.confidence>=60&&ctx.dataQuality>=3&&ctx.liquidity!=="LOW";
+  const entry=Number(x.ticker?.last)||Number(sc?.entry)||0;
+  const risk=Math.max(entry*.005*st.riskAtr,entry*.001);
+  const initialStop=ctx.dir==="LONG"?entry-risk:entry+risk,tp1=ctx.dir==="LONG"?entry+risk:entry-risk,tp2=ctx.dir==="LONG"?entry+risk*2:entry-risk*2,tp3=ctx.dir==="LONG"?entry+risk*3:entry-risk*3,invalidation=ctx.dir==="LONG"?entry-risk*1.25:entry+risk*1.25;
+  return{eligible,status:eligible?"READY":"NO TRADE",dir:ctx.dir,entry,initialStop,tp1,tp2,tp3,invalidation,rr:2,score:ctx.score,align:0,tf:st.tf,reason:eligible?`FA2: ${ctx.dir} • strength ${ctx.strength}% • confidence ${ctx.confidence}% • ${ctx.regime} • OI ${ctx.oiDelta>=0?"▲":"▼"}${Math.abs(ctx.oiDelta*100).toFixed(1)}%/6h • funding ${ctx.funding.toFixed(4)} • holders ${((ctx.lsBuy-ctx.lsSell)*100).toFixed(1)}% net.`:"FA context is not directional, strong, and liquid enough.",ctx,faPass:eligible,technical:false,faScore:ctx.score,faConfidence:ctx.confidence,candleTime:sc?.candleTime||0,source:null,styleMtf:{frames:{},consensus:ctx.dir,align:0,valid:0,requiredFrames:0,complete:true,entryFrame:st.tf,mtf:false}};
+ }
+ if(!a||a.dir==="WAIT")return{eligible:false,status:"NO TRADE",reason:"Selected trader timeframe has no valid directional setup."};
+ if(!sm.complete)return{eligible:false,status:"NO TRADE",reason:`Incomplete MTF confirmation: ${sm.valid}/${sm.requiredFrames} required frames are valid.`,dir:a.dir,entry:a.entry,score:a.score,align:sm.align,tf:st.tf,source:a,styleMtf:sm,ctx,faPass:false,technical:false,faScore:ctx.score,faConfidence:ctx.confidence,candleTime:a.candleTime||0};
+ const align=sm.align,rawStructureRisk=Math.abs(a.entry-a.invalidation),baseAtr=Math.max(a.entry*.0001,rawStructureRisk),technical=a.score>=80&&a.trigger!=="WAIT"&&a.volumeRatio>=1.2&&align>=st.minAlign&&Math.abs(a.entry-a.e21)<=baseAtr*st.maxExt;
+ const faPass=ctx.dir===a.dir&&ctx.confidence>=60&&ctx.dataQuality>=3&&ctx.liquidity!=="LOW";
+ let eligible=false,reason="";
+ if(m.id==="TA"){eligible=technical;reason=eligible?`TA: ${a.structure}; ${Math.round(align*100)}% ${st.name} MTF alignment; volume ${fixed(a.volumeRatio,2)}x; closed-candle trigger confirmed.`:"TA requirements not fully aligned."}
+ if(m.id==="TAFA"){eligible=technical&&faPass;reason=eligible?`TA + FA agreement: technical ${a.dir} setup confirmed and Bybit fundamental/derivatives context agrees.`:"TA and FA do not agree strongly enough."}
+ const risk=Math.max(baseAtr,a.entry*.0025,a.entry*.0001)*st.riskAtr;
+ const initialStop=a.dir==="LONG"?a.entry-risk:a.entry+risk,tp1=a.dir==="LONG"?a.entry+risk:a.entry-risk,tp2=a.dir==="LONG"?a.entry+risk*2:a.entry-risk*2,tp3=a.dir==="LONG"?a.entry+risk*3:a.entry-risk*3;
+ return{eligible,status:eligible?"READY":"NO TRADE",dir:a.dir,entry:a.entry,initialStop,tp1,tp2,tp3,invalidation:a.invalidation,rr:2,score:a.score,align,tf:st.tf,reason,ctx,faPass,technical,faScore:ctx.score,faConfidence:ctx.confidence,candleTime:a.candleTime||0,source:a,styleMtf:sm};
+}
+function strategySnapshot(x,m,st,d){const a=d.source||styleFrame(x,st)||{};return{symbol:x.symbol,analysis:m.id,analysisName:m.name,style:st.id,styleName:st.name,dir:d.dir,ep:d.entry,initialStop:d.initialStop,tp1:d.tp1,tp2:d.tp2,tp3:d.tp3,invalidation:d.invalidation,score:d.score,mtf:d.align,mtfFrames:d.styleMtf?.frames||{},reason:d.reason,context:d.ctx,technical:m.id==="FA"?{mode:"INDEPENDENT_FA",usedForDirection:false}: {structure:a.structure,rsi:a.rsi,macd:a.macd,volume:a.volumeRatio,ema9:a.e9,ema21:a.e21,ema50:a.e50,trigger:a.trigger,support:a.support,resistance:a.resistance,divergence:a.divergence,regime:a.regime},fundamental:{score:d.faScore,strength:d.ctx?.strength,confidence:d.faConfidence,direction:d.ctx?.dir,regime:d.ctx?.regime,funding:d.ctx?.funding,fundingAvg:d.ctx?.fundingAvg,oiDelta:d.ctx?.oiDelta,oiDelta1h:d.ctx?.oiDelta1h,oiDelta12h:d.ctx?.oiDelta12h,longRatio:d.ctx?.lsBuy,shortRatio:d.ctx?.lsSell,basis:d.ctx?.basis,basisRate:d.ctx?.basisRate,liquidity:d.ctx?.liquidity,dataQuality:d.ctx?.dataQuality,factors:d.ctx?.factors||[],evidence:d.ctx?.evidence||[],source:d.ctx?.source},signalAt:Date.now(),signalCandleTime:d.candleTime||0,scannerTf:state.scannerTf,entryTf:d.tf,execution:"SYSTEM PAPER ONLY",accountingVersion:PAPER_ACCOUNTING_VERSION,ohlcSequencing:"STOP_OR_INVALIDATION_FIRST",oiMethodVersion:d.ctx?.oiMethodVersion||"SINGLE_SIDED_2026-06-11"}}
+function signalKey(x,m,st,d){return [x.symbol,d.dir,m.id,st.id,d.tf,d.candleTime||0].join("|")}
+function tfMs(tf){return tf==="D"?86400000:Number(tf)*60000}
+function hasRecentSignal(l,key,x,m,st,d){if(l.signals?.[key])return true;const now=Number(d.candleTime)||0,minGap=STRATEGY_COOLDOWN_CANDLES*tfMs(st.tf);if(!now)return false;return Object.entries(l.signals||{}).some(([k,v])=>{if(!k.startsWith(x.symbol+"|"+d.dir+"|"+m.id+"|"+st.id+"|"))return false;const prior=Number(v?.candleTime)||0;return prior>0&&Math.abs(now-prior)<minGap})}
+function rememberSignal(l,key,d){if(!l.signals)l.signals={};l.signals[key]={candleTime:Number(d?.candleTime)||0,recordedAt:Date.now()};const keys=Object.keys(l.signals);if(keys.length>300)for(const k of keys.slice(0,keys.length-300))delete l.signals[k]}
+function strategyCandidates(){return Array.isArray(state.analysisRows)&&state.analysisRows.length?state.analysisRows:(Array.isArray(state.qualifiedRows)?state.qualifiedRows:(state.scanRows||[]))}
+function maybeOpenStrategyEntries(){
+ ensureStrategyState();
+ const candidates=rankScannerRows(strategyCandidates().filter(x=>x?.a?.status==="READY"));
+ for(const m of STRATEGY_MODES)for(const st of TRADER_STYLES){const l=lane(st,m);if(l.open)continue;let best=null;for(const x of candidates){const d=strategyDecision(x,m,st);if(d.eligible){const key=signalKey(x,m,st,d);if(hasRecentSignal(l,key,x,m,st,d))continue;if(!best||d.score>best.d.score)best={x,d,key};}}if(best)openStrategyTrade(best.x,m,st,best.d,best.key)}
+ renderStrategyLab();savePaper();
+}
+function canonicalPaperOpen({symbol,analysis,analysisName,style,styleName,dir,signalPrice,entry,initialStop,tp1,tp2,tp3,invalidation,reason,context,data,snapshot,signalKey,equity,entryTf,scannerTf,precision,maxHoldMs}){
+ if(!["LONG","SHORT"].includes(dir))throw new Error("Paper entry requires LONG or SHORT direction");
+ const tickSize=Number(precision?.tickSize)||0,qtyStep=Number(precision?.qtyStep)||0,minOrderQty=Number(precision?.minOrderQty)||0;
+ const levels={entry:stepRound(entry,tickSize),initialStop:stepRound(initialStop,tickSize),tp1:stepRound(tp1,tickSize),tp2:stepRound(tp2,tickSize),tp3:stepRound(tp3,tickSize),invalidation:stepRound(invalidation,tickSize)};
+ for(const [name,value] of Object.entries(levels)){if(!Number.isFinite(Number(value)))throw new Error(`Paper entry missing canonical ${name}`)}
+ if(Math.abs(levels.entry-levels.initialStop)<=0)throw new Error("Paper entry requires non-zero initial stop distance");
+ if(dir==="LONG"&&!(levels.invalidation<levels.entry&&levels.initialStop<levels.entry&&levels.tp1>levels.entry&&levels.tp2>levels.tp1&&levels.tp3>levels.tp2))throw new Error("Invalid LONG paper level ordering");
+ if(dir==="SHORT"&&!(levels.invalidation>levels.entry&&levels.initialStop>levels.entry&&levels.tp1<levels.entry&&levels.tp2<levels.tp1&&levels.tp3<levels.tp2))throw new Error("Invalid SHORT paper level ordering");
+ const eq=Number(equity);if(!Number.isFinite(eq)||eq<=0)throw new Error("Paper entry requires positive equity");
+ const riskCash=eq*.01,riskDistance=Math.abs(levels.entry-levels.initialStop);if(!(riskCash>0&&riskDistance>0))throw new Error("Paper entry requires positive risk basis");
+ const entrySlip=levels.entry*(PAPER_SLIPPAGE_BPS/10000),effectiveEntry=dir==="LONG"?levels.entry+entrySlip:levels.entry-entrySlip;
+ const rawQty=riskCash/Math.abs(effectiveEntry-levels.initialStop),qty=stepFloor(rawQty,qtyStep);if(!(qty>0)|| (minOrderQty>0&&qty<minOrderQty))throw new Error("Paper entry quantity is below Bybit minimum for this instrument");
+ const entryFee=Math.abs(qty*effectiveEntry)*PAPER_FEE_RATE;
+ return{accountingVersion:PAPER_ACCOUNTING_VERSION,id:"paper_"+Date.now()+"_"+Math.random().toString(36).slice(2),symbol,exchange:"BYBIT",analysis,analysisName,style,styleName,dir,signalPrice:Number(signalPrice)||levels.entry,entry:levels.entry,effectiveEntry,initialStop:levels.initialStop,activeStop:levels.initialStop,protectedStop:null,tp1:levels.tp1,tp2:levels.tp2,tp3:levels.tp3,invalidation:levels.invalidation,qty,totalQty:qty,remainingQty:qty,riskCash,riskDistance,effectiveRiskDistance:Math.abs(effectiveEntry-levels.initialStop),opened:Date.now(),expiresAt:Number(maxHoldMs)>0?Date.now()+Number(maxHoldMs):null,maxHoldMs:Number(maxHoldMs)||null,entryTf,scannerTf,stage:0,realizedPnl:-entryFee,realizedGrossPnl:0,entryFee,exitFees:0,fees:entryFee,reason,entryReason:reason,context,data,snapshot,signalKey,precision:{tickSize,qtyStep,minOrderQty,maxOrderQty:Number(precision?.maxOrderQty)||0},costModel:{feeRate:PAPER_FEE_RATE,slippageBps:PAPER_SLIPPAGE_BPS},partialFills:[]}
+}
+function canonicalPaperExitPrice(rawPrice,dir){const slip=rawPrice*(PAPER_SLIPPAGE_BPS/10000);return dir==="LONG"?rawPrice-slip:rawPrice+slip}
+function canonicalPaperPartial(p,stage,rawPrice,reason){if(!p||stage<=p.stage||p.remainingQty<=0)return false;const qty=Math.min(p.remainingQty,p.totalQty*PARTIAL_QTY),price=canonicalPaperExitPrice(rawPrice,p.dir),gross=(p.dir==="LONG"?(price-p.effectiveEntry):(p.effectiveEntry-price))*qty,fee=Math.abs(qty*price)*PAPER_FEE_RATE,net=gross-fee;p.remainingQty=Math.max(0,p.remainingQty-qty);p.realizedPnl+=net;p.realizedGrossPnl=(p.realizedGrossPnl||0)+gross;p.exitFees=(p.exitFees||0)+fee;p.fees=(p.entryFee||0)+p.exitFees;p.partialFills.push({stage,qty,price,grossPnl:gross,fee,netPnl:net,reason,time:Date.now()});p.stage=stage;if(stage>=3)p.remainingQty=0;else{p.protectedStop=p.entry;p.activeStop=p.protectedStop}return true}
+function canonicalPaperTargets(p,last){const hit3=p.dir==="LONG"?last.h>=p.tp3:last.l<=p.tp3,hit2=p.dir==="LONG"?last.h>=p.tp2:last.l<=p.tp2,hit1=p.dir==="LONG"?last.h>=p.tp1:last.l<=p.tp1;if(hit3){if(p.stage<1)canonicalPaperPartial(p,1,p.tp1,"TP1 HIT • 1/3");if(p.stage<2)canonicalPaperPartial(p,2,p.tp2,"TP2 HIT • 1/3");if(p.stage<3)canonicalPaperPartial(p,3,p.tp3,"TP3 HIT • FINAL")}else if(hit2){if(p.stage<1)canonicalPaperPartial(p,1,p.tp1,"TP1 HIT • 1/3");if(p.stage<2)canonicalPaperPartial(p,2,p.tp2,"TP2 HIT • 1/3")}else if(hit1&&p.stage<1)canonicalPaperPartial(p,1,p.tp1,"TP1 HIT • 1/3")}
+function canonicalPaperClose(p,reason,rawPrice){if(!p)return null;const remaining=p.remainingQty||0;if(remaining>0){const price=canonicalPaperExitPrice(rawPrice,p.dir),gross=(p.dir==="LONG"?(price-p.effectiveEntry):(p.effectiveEntry-price))*remaining,fee=Math.abs(remaining*price)*PAPER_FEE_RATE,net=gross-fee;p.realizedPnl+=net;p.realizedGrossPnl=(p.realizedGrossPnl||0)+gross;p.exitFees=(p.exitFees||0)+fee;p.fees=(p.entryFee||0)+p.exitFees;p.partialFills.push({stage:p.stage,qty:remaining,price,grossPnl:gross,fee,netPnl:net,reason,time:Date.now()});p.remainingQty=0}
+ const grossPnl=Number(p.realizedGrossPnl)||0,netPnl=Number(p.realizedPnl)||0,riskCash=Math.max(Number(p.riskCash)||0,1),grossR=grossPnl/riskCash,netR=netPnl/riskCash;
+ return{...p,status:netPnl>0?"WIN":netPnl<0?"LOSS":"BREAKEVEN",exitReason:reason,exitPrice:rawPrice,grossR,netR,realizedPnl:netPnl,grossPnl,netPnl,fees:p.fees||0,pnl:netPnl,closed:Date.now(),levels:{initialStop:p.initialStop,activeStop:p.activeStop,protectedStop:p.protectedStop,invalidation:p.invalidation,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3}}
+}
+function openStrategyTrade(x,m,st,d,key){const l=lane(st,m);if(l.open||!d.eligible)return;const fill=Number(x.ticker?.last);const prepared=prepareStyleFill(d,fill,st);if(!prepared||prepared.blocked)return;rememberSignal(l,key,d);l.open=canonicalPaperOpen({symbol:x.symbol,analysis:m.id,analysisName:m.name,style:st.id,styleName:st.name,dir:d.dir,signalPrice:prepared.signalPrice,entry:prepared.fillPrice,initialStop:prepared.initialStop,tp1:prepared.tp1,tp2:prepared.tp2,tp3:prepared.tp3,invalidation:prepared.invalidation,reason:d.reason,context:d.ctx,data:{score:d.score,mtf:d.align,mtfFrames:d.styleMtf?.frames,structure:d.source?.structure,volume:d.source?.volumeRatio,rsi:d.source?.rsi,macd:d.source?.macd,signalPrice:prepared.signalPrice,fillPrice:prepared.fillPrice,fillDriftPct:prepared.fillDriftPct,holdingHorizon:st.horizon},snapshot:strategySnapshot(x,m,st,d),signalKey:key,equity:l.equity,entryTf:d.tf,scannerTf:state.scannerTf,precision:x.instrument,maxHoldMs:st.maxHoldMs});savePaper();renderStrategyLab()}
+function processStrategyTargets(l,last){if(l.open)canonicalPaperTargets(l.open,last)}
+function closeStrategyTrade(l,reason,price){const p=l.open;if(!p)return;const t=canonicalPaperClose(p,reason,price);if(!t)return;l.equity+=t.netPnl;l.pnl+=t.netPnl;if(t.netPnl>0){l.wins++;l.currentStreak=l.currentStreak>=0?l.currentStreak+1:1;l.maxWinStreak=Math.max(l.maxWinStreak,l.currentStreak)}else if(t.netPnl<0){l.currentStreak=l.currentStreak<=0?l.currentStreak-1:-1;l.maxLossStreak=Math.max(l.maxLossStreak,Math.abs(l.currentStreak))}else l.currentStreak=0;l.peakEquity=Math.max(Number(l.peakEquity)||10000,l.equity);l.maxDrawdown=Math.max(Number(l.maxDrawdown)||0,l.peakEquity-l.equity);l.trades.unshift(t);l.open=null}
+async function checkStrategyLab(){
+ ensureStrategyState();const jobs=[];for(const m of STRATEGY_MODES)for(const st of TRADER_STYLES){const l=lane(st,m);if(l.open)jobs.push((async()=>{try{const arr=await candles(l.open.symbol,l.open.snapshot?.entryTf||st.tf);const last=arr.at(-1);if(!last)return;const p=l.open;if(p.accountingVersion!==PAPER_ACCOUNTING_VERSION)return;let closeReason=null,closePrice=null;
+ if(p.dir==="LONG"){if(last.l<=p.invalidation){closeReason="INVALIDATION";closePrice=p.invalidation}else if(last.l<=p.activeStop){closeReason=p.stage?"PROTECTED STOP":"INITIAL STOP";closePrice=p.activeStop}else{processStrategyTargets(l,last);if(p.stage>=3){closeReason="TP3 HIT • FINAL";closePrice=p.tp3}}}
+ else {if(last.h>=p.invalidation){closeReason="INVALIDATION";closePrice=p.invalidation}else if(last.h>=p.activeStop){closeReason=p.stage?"PROTECTED STOP":"INITIAL STOP";closePrice=p.activeStop}else{processStrategyTargets(l,last);if(p.stage>=3){closeReason="TP3 HIT • FINAL";closePrice=p.tp3}}}
+ if(closeReason)closeStrategyTrade(l,closeReason,closePrice);
+ }catch(e){console.warn("Strategy lab monitor",e.message)}})());await Promise.all(jobs);renderStrategyLab();savePaper()}}
+setInterval(async()=>{await checkStrategyLab();await checkPaper()},15000)
+function strategyStats(){
+ ensureStrategyState();const out=[];for(const m of STRATEGY_MODES)for(const st of TRADER_STYLES){const l=lane(st,m),valid=l.trades.filter(t=>!t.legacy&&t.snapshot&&t.accountingVersion===PAPER_ACCOUNTING_VERSION&&Number.isFinite(Number(t.netR)));const n=valid.length,w=valid.filter(t=>t.status==="WIN").length,grossRs=valid.map(t=>Number(t.grossR)||0),netRs=valid.map(t=>Number(t.netR)||0),avgGross=n?grossRs.reduce((s,v)=>s+v,0)/n:0,avgNet=n?netRs.reduce((s,v)=>s+v,0)/n:0,sorted=[...netRs].sort((a,b)=>a-b),medianNet=n?(n%2?sorted[(n-1)/2]:(sorted[n/2-1]+sorted[n/2])/2):0,net=valid.reduce((s,t)=>s+(Number(t.netPnl??t.pnl)||0),0),lossR=valid.filter(t=>Number(t.netR)<0).reduce((s,t)=>s+Math.abs(Number(t.netR)||0),0),winR=valid.filter(t=>Number(t.netR)>0).reduce((s,t)=>s+Number(t.netR),0),pf=lossR?winR/lossR:null,winners=valid.filter(t=>Number(t.netR)>0).map(t=>Number(t.netR)),losers=valid.filter(t=>Number(t.netR)<0).map(t=>Math.abs(Number(t.netR))),avgWin=winners.length?winners.reduce((a,b)=>a+b,0)/winners.length:0,avgLoss=losers.length?losers.reduce((a,b)=>a+b,0)/losers.length:0,expectancy=avgNet,dd=Number(l.maxDrawdown)||0,recovery=dd?net/dd:null;out.push({m,st,l,n,w,wr:n?w/n*100:0,avgGross,avgNet,medianNet,net,pf,avgWin,avgLoss,expectancy,dd,recovery,insufficient:n<10,developing:n>=10&&n<MIN_SAMPLE_FOR_BEST,qualified:n>=MIN_SAMPLE_FOR_BEST})}return out
+}
+function renderStrategyLab(){
+ ensureStrategyState();const stats=strategyStats(),open=stats.filter(x=>x.l.open).length,closed=stats.reduce((s,x)=>s+x.n,0),qualified=stats.filter(x=>x.qualified).sort((a,b)=>b.avgNet-a.avgNet),ranked=qualified[0];$("strategyLaneCount").textContent="12";$("strategyOpenCount").textContent=open;$("strategyClosedCount").textContent=closed;$("strategyBestLane").textContent=ranked?ranked.m.tag+" / "+ranked.st.name:"INSUFFICIENT SAMPLE";
+ const cards=[];for(const m of STRATEGY_MODES)for(const st of TRADER_STYLES){const xs=stats.find(z=>z.m.id===m.id&&z.st.id===st.id),l=lane(st,m),n=xs.n,w=xs.w,openp=l.open;let sample=strategyCandidates().map(x=>({x,d:strategyDecision(x,m,st)})).filter(z=>z.d.eligible).sort((a,b)=>b.d.score-a.d.score)[0],d=sample?.d,sampleLabel=n>=MIN_SAMPLE_FOR_BEST?"QUALIFIED":n>=10?"DEVELOPING":"INSUFFICIENT SAMPLE";cards.push(`<article class="strategy-card ${d?.eligible?"active":""}"><div><span class="tag">${m.tag}</span><span class="tag">${st.name}</span></div><h4>${m.name} • ${st.name}</h4><div class="mini">${m.desc} Entry timeframe: <b>${st.tf==="D"?"1D":st.tf==="240"?"4H":st.tf==="60"?"1H":"15m"}</b></div>${openp?`<div class="strategy-status ready">● OPEN TEST • ${cleanSym(openp.symbol)} • ${openp.dir}</div><div class="strategy-plan"><div><small>EP</small><b>${fmt(openp.entry,8)}</b></div><div><small>SL</small><b>${fmt(openp.initialStop,8)}</b></div><div><small>TP1</small><b>${fmt(openp.tp1,8)}</b></div><div><small>TP2</small><b>${fmt(openp.tp2,8)}</b></div><div><small>TP3</small><b>${fmt(openp.tp3,8)}</b></div><div><small>INVALIDATION</small><b>${fmt(openp.invalidation,8)}</b></div></div>`:d?`<div class="strategy-status ${d.eligible?"ready":"wait"}">${d.status} • Score ${d.score}% • ${m.id==="FA"?"MTF N/A • FA independent":"MTF "+Math.round(d.align*100)+"%"}</div><div class="strategy-plan"><div><small>EP</small><b>${fmt(d.entry,8)}</b></div><div><small>SL</small><b>${fmt(d.initialStop,8)}</b></div><div><small>TP1</small><b>${fmt(d.tp1,8)}</b></div><div><small>TP2</small><b>${fmt(d.tp2,8)}</b></div><div><small>TP3</small><b>${fmt(d.tp3,8)}</b></div><div><small>INVALIDATION</small><b>${fmt(d.invalidation,8)}</b></div></div><div class="mini">${escapeHtml(d.reason)}${d.ctx?`<br>FA ${d.faScore||0}% • ${d.ctx.dir||"WAIT"} • OI ${d.ctx.oiDelta>=0?"▲":"▼"}${Math.abs((d.ctx.oiDelta||0)*100).toFixed(1)}% • Funding ${(d.ctx.funding||0).toFixed(4)}`:""}</div>`:`<div class="strategy-status skip">NO TRADE • waiting for qualifying setup</div>`}<div class="mini"><b>Evidence:</b> ${n} valid tests • ${sampleLabel} • Win rate ${n?(w/n*100).toFixed(0):"0"}% • Gross R ${n?xs.avgGross.toFixed(2):"0.00"} • Net R ${n?xs.avgNet.toFixed(2):"0.00"} • Median Net R ${n?xs.medianNet.toFixed(2):"0.00"} • PF ${xs.pf?xs.pf.toFixed(2):"—"} • Max DD $${fmt(xs.dd,2)} • Expectancy ${n?xs.expectancy.toFixed(2):"0.00"}R • Recovery ${xs.recovery!=null?xs.recovery.toFixed(2):"—"}</div></article>`)}$("strategyGrid").innerHTML=cards.join("")||'<div class="empty">Run scanner first.</div>';
+ $("strategyStatsBody").innerHTML=stats.map(x=>`<tr><td>${x.m.name}</td><td>${x.st.name}</td><td>${x.n}</td><td>${x.n?x.wr.toFixed(0):"0"}%</td><td>${x.n?x.avgNet.toFixed(2):"0.00"}</td><td>$${fmt(x.net,2)}</td><td>${x.qualified?"QUALIFIED":x.developing?"DEVELOPING":"INSUFFICIENT SAMPLE"}</td></tr>`).join("");
+}
+function autoPaperFromScanner(){if(state.paper.open)return;const top=topCanonicalTrade(strategyCandidates());if(!top)return;openPaperTrade(top)}
+function prepareStyleFill(d,fillPrice,st){const signal=Number(d.entry),fill=Number(fillPrice);if(!Number.isFinite(signal)||!Number.isFinite(fill)||fill<=0)return null;const drift=Math.abs((fill-signal)/signal)*100;if(drift>st.maxDriftPct)return{blocked:true,signalPrice:signal,fillPrice:fill,fillDriftPct:drift};const riskDistance=Math.abs(Number(d.entry)-Number(d.initialStop));if(!(riskDistance>0))return null;const dir=d.dir,initialStop=dir==="LONG"?fill-riskDistance:fill+riskDistance,tp1=dir==="LONG"?fill+riskDistance:fill-riskDistance,tp2=dir==="LONG"?fill+riskDistance*2:fill-riskDistance*2,tp3=dir==="LONG"?fill+riskDistance*3:fill-riskDistance*3;const structural=Number(d.invalidation);const invalidation=dir==="LONG"?Math.min(fill-riskDistance*1.25,structural):Math.max(fill+riskDistance*1.25,structural);return{blocked:false,signalPrice:signal,fillPrice:fill,fillDriftPct:drift,initialStop,tp1,tp2,tp3,invalidation,riskDistance}}
+function openPaperTrade(x){const st=activeTradeStyle(),d=x.styleDecision;if(!d?.eligible||d.score<80)return;const fill=Number(x.ticker?.last);const prepared=prepareStyleFill(d,fill,st);if(!prepared||prepared.blocked){console.info("V31 paper entry held: fill drift outside style guard",{symbol:x.symbol,style:st.id,signalPrice:d?.entry,fillPrice:fill,fillDriftPct:prepared?.fillDriftPct,maxDriftPct:st.maxDriftPct});return}state.paper.open=canonicalPaperOpen({symbol:x.symbol,analysis:"TAFA",analysisName:"Technical + Fundamental",style:st.id,styleName:st.name,dir:d.dir,signalPrice:prepared.signalPrice,entry:prepared.fillPrice,initialStop:prepared.initialStop,tp1:prepared.tp1,tp2:prepared.tp2,tp3:prepared.tp3,invalidation:prepared.invalidation,reason:`${st.name}: ${d.reason}`,context:d.ctx||x.fa||null,data:{score:d.score,volume:x.a.volumeRatio,mtf:d.align,structure:d.source?.structure,rsi:d.source?.rsi,macd:d.source?.macd,signalPrice:prepared.signalPrice,fillPrice:prepared.fillPrice,fillDriftPct:prepared.fillDriftPct,holdingHorizon:st.horizon},snapshot:strategySnapshot(x,{id:"TAFA",name:"Technical + Fundamental"},st,d),equity:state.paper.equity,entryTf:st.primaryTf,scannerTf:state.scannerTf,precision:x.instrument,maxHoldMs:st.maxHoldMs});savePaper();renderPaper()}
+function processPaperTargets(p,last){canonicalPaperTargets(p,last)}
+function paperDiagnosis(t){const r=String(t?.exitReason||"");if(r==="TP3 HIT • FINAL")return{verdict:"WIN: all staged targets completed under the canonical paper path.",mistakes:"Entry followed the qualifying setup and the trade reached TP1 → TP2 → TP3 without invalidation."};if(r==="TIME EXPIRY")return{verdict:"TIME-BASED EXIT: the selected holding window ended before a canonical target/invalidation completed.",mistakes:"The strategy reached its maximum holding horizon; preserve the outcome for style-level expectancy analysis."};if(r==="INVALIDATION")return{verdict:"LOSS: structural/risk invalidation was reached before the protected target path completed.",mistakes:"The market moved through the canonical invalidation level; preserve the full entry context for later sample analysis."};if(r.includes("PROTECTED STOP"))return{verdict:"BREAKEVEN/PROTECTED: TP protection moved the active stop to entry before exit.",mistakes:"The setup reached at least one partial target, then returned to the protected entry level."};return{verdict:t?.netPnl>0?"WIN: paper trade closed net positive after estimated costs.":t?.netPnl<0?"LOSS: paper trade closed net negative after estimated costs.":"BREAKEVEN: paper trade closed near flat after estimated costs.",mistakes:"Review the recorded entry, active stop, invalidation, MTF and market-context evidence before changing any rule."}}
+async function checkPaper(){const p=state.paper.open;if(!p||p.accountingVersion!==PAPER_ACCOUNTING_VERSION)return;try{if(p.expiresAt&&Date.now()>=p.expiresAt){const t=canonicalPaperClose(p,"TIME EXPIRY",Number(p.effectiveEntry)||Number(p.entry));const diag=paperDiagnosis(t);state.paper.equity+=t.netPnl;state.paper.pnl+=t.netPnl;if(t.netPnl>0)state.paper.wins++;state.paper.trades.unshift({...t,exchange:"BYBIT",entryReason:p.entryReason||p.reason||"System-generated paper entry",data:p.data,verdict:diag.verdict,mistakes:diag.mistakes,levels:{initialStop:p.initialStop,activeStop:p.activeStop,protectedStop:p.protectedStop,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3,invalidation:p.invalidation}});state.paper.open=null;savePaper();renderPaper();return;}const a=await candles(p.symbol,p.entryTf||p.tf||state.scannerTf),last=a.at(-1);if(!last)return;let close=null;if(p.dir==="LONG"){if(last.l<=p.invalidation)close={type:"INVALIDATION",price:p.invalidation};else if(last.l<=p.activeStop)close={type:p.stage?"PROTECTED STOP":"SL",price:p.activeStop};else{processPaperTargets(p,last);if(p.stage>=3)close={type:"TP3",price:p.tp3}}}else{if(last.h>=p.invalidation)close={type:"INVALIDATION",price:p.invalidation};else if(last.h>=p.activeStop)close={type:p.stage?"PROTECTED STOP":"SL",price:p.activeStop};else{processPaperTargets(p,last);if(p.stage>=3)close={type:"TP3",price:p.tp3}}}if(!close)return;const t=canonicalPaperClose(p,close.type,close.price);const diag=paperDiagnosis(t);state.paper.equity+=t.netPnl;state.paper.pnl+=t.netPnl;if(t.netPnl>0)state.paper.wins++;state.paper.trades.unshift({...t,exchange:"BYBIT",entryReason:p.entryReason||p.reason||"System-generated paper entry",data:p.data,verdict:diag.verdict,mistakes:diag.mistakes,levels:{initialStop:p.initialStop,activeStop:p.activeStop,protectedStop:p.protectedStop,tp1:p.tp1,tp2:p.tp2,tp3:p.tp3,invalidation:p.invalidation}});state.paper.open=null;savePaper();renderPaper()}catch(e){console.warn("Paper monitor:",e.message)}}
+function renderScoreCalibration(){const host=$('scoreCalibration');if(!host)return;const trades=Array.isArray(state.paper.trades)?state.paper.trades:[];const bands=[[60,69],[70,79],[80,89],[90,99]];host.innerHTML=`<div class="score-calibration"><div class="strategy-note"><b>Observed Score Calibration:</b> paper results only. This does not convert the model score into probability; it shows how outcomes have behaved in collected samples.</div><table><thead><tr><th>Score</th><th>Trades</th><th>Win Rate</th><th>Net R</th></tr></thead><tbody>${bands.map(([lo,hi])=>{const xs=trades.filter(t=>{const s=Number(t?.data?.score);return Number.isFinite(s)&&s>=lo&&s<=hi});const wins=xs.filter(t=>Number(t.netPnl)>0).length;const netR=xs.reduce((sum,t)=>sum+(Number(t.netR)||0),0);return `<tr><td>${lo}–${hi}</td><td>${xs.length}</td><td>${xs.length?Math.round(wins/xs.length*100):0}%</td><td>${netR.toFixed(2)}R</td></tr>`}).join('')}</tbody></table></div>`}
+function renderPaper(){const n=state.paper.trades.length;$('equity').textContent="$"+fmt(state.paper.equity,2);$('trades').textContent=n;$('winrate').textContent=n?(state.paper.wins/n*100).toFixed(0)+"%":"0%";$('pnl').textContent=(state.paper.pnl>=0?"+$":"-$")+fmt(Math.abs(state.paper.pnl),2);const open=state.paper.open?`<div class="trade"><strong>${cleanSym(state.paper.open.symbol)}</strong> • ${state.paper.open.dir} • OPEN<br><div class="meta">Signal ${fmt(state.paper.open.signalPrice,8)} • Fill ${fmt(state.paper.open.entry,8)} • Drift ${fixed(state.paper.open.data?.fillDriftPct,2)}% • SL ${fmt(state.paper.open.initialStop,8)} • TP1 ${fmt(state.paper.open.tp1,8)} • TP2 ${fmt(state.paper.open.tp2,8)} • TP3 ${fmt(state.paper.open.tp3,8)} • INV ${fmt(state.paper.open.invalidation,8)}</div><div class="verdict">🎯 Entry reason: ${escapeHtml(state.paper.open.entryReason)}</div></div>`:"";$('tradeList').innerHTML=open+state.paper.trades.map(t=>`<div class="trade"><strong>${cleanSym(t.symbol)}</strong> • ${t.dir} • <b>${escapeHtml(t.exitReason||"CLOSED")}</b> • ${t.pnl>=0?"+":""}$${fmt(t.pnl,2)}<div class="meta">Entry ${fmt(t.entry,8)} → Exit ${fmt(t.exitPrice,8)} • ${new Date(t.closed).toLocaleString()}</div><div class="verdict"><b>Entry reason:</b> ${escapeHtml(t.entryReason)}<br><b>Verdict:</b> ${escapeHtml(t.verdict)}<br><b>What was wrong / right:</b> ${escapeHtml(t.mistakes)}<br><b>Costs:</b> $${fmt(t.fees||0,2)} estimated fees + ${PAPER_SLIPPAGE_BPS} bps slippage model<br><b>Levels:</b> EP ${fmt(t.entry,8)} • SL ${fmt(t.levels?.initialStop,8)} • TP1 ${fmt(t.levels?.tp1||t.tp1,8)} • TP2 ${fmt(t.levels?.tp2||t.tp2,8)} • TP3 ${fmt(t.levels?.tp3||t.tp3,8)} • INV ${fmt(t.levels?.invalidation||t.levels?.invalidation||t.invalidation,8)}</div></div>`).join("")||"No paper trades yet.";renderScoreCalibration()}
+function savePaper(){try{state.paper.engineVersion=ENGINE_CONTRACT_VERSION;state.paper.accountingVersion=PAPER_ACCOUNTING_VERSION;state.paper.legacyJournals=Array.isArray(state.paper.legacyJournals)?state.paper.legacyJournals:[];localStorage.setItem("public_mbp_clean_paper_v2",JSON.stringify({engineVersion:ENGINE_CONTRACT_VERSION,paper:state.paper,strategyLab:state.strategyLab,tradeStyle:state.tradeStyle}))}catch{}}
+async function restorePaper(){
+ try{
+  const x=JSON.parse(localStorage.getItem("public_mbp_clean_paper_v2")||"null");
+  if(x){
+   if(x.engineVersion!==ENGINE_CONTRACT_VERSION){
+    state.paper.legacyJournals=state.paper.legacyJournals||[];state.paper.legacyJournals.push({archiveVersion:x.engineVersion||"unknown",paper:x.paper||null,strategyLab:x.strategyLab||null,archivedAt:Date.now(),reason:"Legacy engine contract preserved separately; current V31 ledger starts clean to prevent incompatible state mixing."});
+   }else{
+    if(x.paper&&Number(x.paper.accountingVersion)===PAPER_ACCOUNTING_VERSION&&x.paper.engineVersion===ENGINE_CONTRACT_VERSION)state.paper=x.paper;
+    else if(x.paper){state.paper.legacyJournals=state.paper.legacyJournals||[];state.paper.legacyJournals.push({paper:x.paper,archivedAt:Date.now(),reason:"Legacy paper accounting preserved separately; current V31 ledger starts clean to prevent mixed accounting."})}
+    if(x.strategyLab)state.strategyLab=x.strategyLab;if(TRADE_STYLE_CONFIG[x.tradeStyle])state.tradeStyle=x.tradeStyle;
+   }
+  }
+ }catch(e){console.warn("Paper restore:",e.message)}
+ ensureStrategyState();savePaper();renderPaper();renderStrategyLab()
+}
+setInterval(()=>{if(!document.hidden)scan()},300000)
+ensureStrategyState();renderPaper();renderStrategyLab();
+(async()=>{
+  try{
+    setLogin("Public market engine ready");
+    $("loginGate").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    setStatus("PUBLIC • READ-ONLY",true);
+    await restorePaper();
+    renderStyleDesk();
+    await scan();
+  }catch(e){
+    setLogin("Public market engine failed",true);
+    console.error("Public AI Trading startup error",String(e?.message||e));
+    setStatus(String(e?.message||e),false,true);
+    console.error("Public AI Trading initialization diagnostic",e);
+  }
+})();
+</script>
+</body>
+</html>
